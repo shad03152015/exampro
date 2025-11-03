@@ -18,6 +18,20 @@ const DEFAULT_THEME_COLOR = '#4f46e5'; // Default Indigo
 const DEFAULT_BACKGROUND = 'gradient';
 const DEFAULT_NUM_QUESTIONS = '10';
 
+/**
+ * Shuffles an array using the Fisher-Yates algorithm for a more robust and uniform shuffle.
+ * @param array The array to shuffle.
+ * @returns A new shuffled array.
+ */
+const shuffleArray = (array: Question[]): Question[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
 const App: React.FC = () => {
   const [examStatus, setExamStatus] = useState<ExamStatus>(ExamStatus.Idle);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
@@ -112,8 +126,8 @@ const App: React.FC = () => {
         throw new Error("No questions could be found for the selected subject.");
       }
       
-      // Shuffle questions for variety
-      const shuffled = [...questions].sort(() => 0.5 - Math.random());
+      // Use Fisher-Yates algorithm for a truly random shuffle
+      const shuffled = shuffleArray(questions);
       
       const desiredCount = numQuestions === 'All' ? shuffled.length : parseInt(numQuestions, 10);
       const finalQuestions = shuffled.slice(0, Math.min(desiredCount, shuffled.length));

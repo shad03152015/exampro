@@ -1,43 +1,48 @@
-
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
+// FIX: Initialize the GoogleGenAI client.
+// Per coding guidelines, the API key must be read from process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
+/**
+ * Generates an explanation for why a user's answer is incorrect using the Gemini API.
+ * @param question The exam question.
+ * @param correctAnswer The correct answer.
+ * @param userAnswer The user's incorrect answer.
+ * @returns A promise that resolves to a string with the explanation.
+ */
+export const getAnswerExplanation = async (
+  question: string,
+  correctAnswer: string,
+  userAnswer: string
+): Promise<string> => {
+  try {
+    // FIX: Select model for the task.
+    // Per coding guidelines, use 'gemini-2.5-flash' for basic text tasks.
+    const model = 'gemini-2.5-flash';
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+    const prompt = `You are an expert law professor. Your role is to provide a concise and helpful explanation for a student who has answered an exam question incorrectly.
 
-export const getAnswerExplanation = async (question: string, correctAnswer: string, userAnswer: string): Promise<string> => {
-    // FIX: Separated system instruction from prompt for better model guidance, per Gemini API best practices.
-    const systemInstruction = `You are an expert law professor's assistant providing nuanced feedback on an exam. Your task is to generate a context-aware clarification for a student's incorrect answer.
+Exam Question: "${question}"
 
-Analyze the student's answer in relation to the correct one and the question.
-1.  Identify the primary misunderstanding or missing key concept in the student's answer.
-2.  Briefly explain why the suggested answer is correct, referencing the core legal principle.
-3.  Keep your tone encouraging and educational. The goal is to help the student learn, not just to point out their mistake.`;
+Correct Answer: "${correctAnswer}"
 
-    const contents = `Question: "${question}"
-Suggested Correct Answer: "${correctAnswer}"
 Student's Incorrect Answer: "${userAnswer}"
 
-Provide your clarification:`;
+Please provide a brief explanation (2-3 sentences) clarifying why the student's answer is incorrect and highlighting the key concepts they missed. Focus on the core legal principle. Do not be condescending.`;
 
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: contents,
-            config: {
-                systemInstruction,
-            },
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error generating explanation:", error);
-        if (error instanceof Error) {
-            throw new Error(`Failed to generate explanation: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred while generating the explanation.");
-    }
+    // FIX: Call the Gemini API to generate content.
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+    });
+
+    // FIX: Extract text output from the response.
+    // Per coding guidelines, the .text property should be used to get the string output.
+    return response.text;
+  } catch (error) {
+    console.error("Error generating explanation from Gemini API:", error);
+    // Propagate a user-friendly error message
+    throw new Error("Failed to get explanation from AI service. Please try again later.");
+  }
 };
