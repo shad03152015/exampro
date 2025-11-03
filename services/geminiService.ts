@@ -10,8 +10,12 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export const getAnswerExplanation = async (question: string, correctAnswer: string, userAnswer: string): Promise<string> => {
     const prompt = `
-      You are an expert law professor's assistant. Your task is to provide a brief, helpful clarification for a student's incorrect exam answer.
-      Focus on the core reason the user's answer is wrong and gently guide them toward the correct concept. Keep the explanation to 2-3 sentences.
+      You are an expert law professor's assistant providing nuanced feedback on an exam. Your task is to generate a context-aware clarification for a student's incorrect answer.
+
+      Analyze the student's answer in relation to the correct one and the question.
+      1.  Identify the primary misunderstanding or missing key concept in the student's answer.
+      2.  Briefly explain why the suggested answer is correct, referencing the core legal principle.
+      3.  Keep your tone encouraging and educational. The goal is to help the student learn, not just to point out their mistake.
 
       Question: "${question}"
       Suggested Correct Answer: "${correctAnswer}"
@@ -22,7 +26,7 @@ export const getAnswerExplanation = async (question: string, correctAnswer: stri
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-pro',
             contents: prompt,
         });
         return response.text;

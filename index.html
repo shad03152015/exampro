@@ -4,33 +4,62 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Exam Simulator & Image Generator</title>
+    <title>Exam Bar 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* Default theme color (indigo) */
+        --brand-primary-h: 243;
+        --brand-primary-s: 89%;
+        --brand-primary-l: 65%;
+        --brand-primary-rgb: 79, 70, 229;
+      }
+      body {
+        background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a);
+        background-size: 400% 400%;
+        animation: gradientBG 20s ease infinite;
+      }
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      /* Custom text shadow for neon glow */
+      .text-glow {
+        text-shadow: 0 0 8px rgba(var(--brand-primary-rgb), 0.6), 0 0 20px rgba(var(--brand-primary-rgb), 0.3);
+      }
+    </style>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
-              'brand-primary': '#4f46e5',
+              'brand-primary': 'hsl(var(--brand-primary-h), var(--brand-primary-s), var(--brand-primary-l))',
               'brand-secondary': '#10b981',
+            },
+            boxShadow: {
+              'glow-primary': '0 0 15px rgba(var(--brand-primary-rgb), 0.5), 0 0 30px rgba(var(--brand-primary-rgb), 0.2)',
+              'glow-primary-lg': '0 0 25px rgba(var(--brand-primary-rgb), 0.6), 0 0 50px rgba(var(--brand-primary-rgb), 0.3)',
             },
             animation: {
               'fade-in': 'fadeIn 0.5s ease-in-out',
               'slide-in-up': 'slideInUp 0.5s ease-in-out',
               'pulse-warning': 'pulseWarning 2s infinite ease-in-out',
+              'subtle-glow': 'subtleGlow 3s infinite ease-in-out',
             },
             keyframes: {
-              fadeIn: {
-                '0%': { opacity: 0 },
-                '100%': { opacity: 1 },
-              },
-              slideInUp: {
-                '0%': { transform: 'translateY(20px)', opacity: 0 },
-                '100%': { transform: 'translateY(0)', opacity: 1 },
-              },
-              pulseWarning: {
-                '0%, 100%': { opacity: 1 },
-                '50%': { opacity: 0.75 },
+              fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+              slideInUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+              pulseWarning: { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.75 } },
+              subtleGlow: {
+                '0%, 100%': { filter: 'brightness(1)' },
+                '50%': { filter: 'brightness(1.15)' },
               },
             },
           },
@@ -48,7 +77,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+  <body class="text-slate-100">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
