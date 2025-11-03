@@ -19,7 +19,7 @@ const ALL_QUESTIONS: Question[] = [
 export const getAvailableSubjects = async (): Promise<string[]> => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     const subjects = new Set(ALL_QUESTIONS.map(q => q.subject));
-    return ['All Subjects', ...Array.from(subjects)];
+    return ['All Subjects', ...Array.from(subjects).sort()];
 };
 
 /**
@@ -28,14 +28,9 @@ export const getAvailableSubjects = async (): Promise<string[]> => {
 export const getQuestionsForSubject = async (subject: string): Promise<Question[]> => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     
-    let questions: Question[];
-
     if (subject === 'All Subjects') {
-        questions = [...ALL_QUESTIONS];
-    } else {
-        questions = ALL_QUESTIONS.filter(q => q.subject === subject);
+        return [...ALL_QUESTIONS];
     }
-
-    // Re-number the questions to ensure they are sequential for the current exam.
-    return questions.map((q, index) => ({ ...q, No: index + 1 }));
+    
+    return ALL_QUESTIONS.filter(q => q.subject === subject);
 };

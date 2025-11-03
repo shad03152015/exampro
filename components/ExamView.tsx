@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Question, UserAnswers } from '../types';
-import { ClockIcon, FlagIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon } from './IconComponents';
+import { HourglassIcon, FlagIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon } from './IconComponents';
 
 interface ExamViewProps {
   questions: Question[];
@@ -26,6 +26,8 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const [isAnswerVisible, setIsAnswerVisible] = useState<boolean>(false);
   
   const flaggedDropdownRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const currentQuestion = useMemo(() => questions[currentIndex], [questions, currentIndex]);
   const isLastQuestion = currentIndex === questions.length - 1;
   
@@ -34,26 +36,28 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   }, [onFinish, userAnswers]);
 
   // Timer countdown effect
-  useEffect(() => {
-    const timer = setInterval(() => {
+   useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
       setTimeRemaining(prevTime => {
         if (prevTime <= 1) {
-          clearInterval(timer);
+          if (timerRef.current) clearInterval(timerRef.current);
+          handleSubmit();
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [handleSubmit]);
 
-  // Auto-submit effect when timer runs out
-  useEffect(() => {
-    if (timeRemaining === 0) {
-      handleSubmit();
-    }
-  }, [timeRemaining, handleSubmit]);
 
   useEffect(() => {
     if (!isLastQuestion && confirmingSubmit) {
@@ -125,20 +129,20 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const isCurrentQuestionFlagged = flaggedQuestions.has(currentQuestion.No);
 
   return (
-    <div className="w-full lg:w-[90%] bg-slate-900/40 backdrop-blur-2xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/30 p-6 md:p-10 flex flex-col animate-slide-in-up">
+    <div className="glass-panel w-full flex-grow p-6 md:p-10 flex flex-col animate-slide-in-up">
       <header className="mb-6">
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-y-3">
+        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
           <div className='text-sm text-slate-400 flex flex-col sm:flex-row sm:items-center sm:gap-4'>
             <span>Question {currentIndex + 1} of {questions.length}</span>
             <span className="font-semibold hidden sm:block text-slate-600">•</span>
             <span className="font-semibold text-slate-300">{currentQuestion.subject}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 self-end md:self-center">
             <div className="relative" ref={flaggedDropdownRef}>
               <button
                   onClick={() => setIsFlaggedDropdownOpen(prev => !prev)}
                   disabled={flaggedQuestions.size === 0}
-                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition-all bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-800/50 disabled:border-slate-700 disabled:text-slate-500"
+                  className="select-embossed flex items-center gap-2 rounded-lg px-3 py-1.5 transition-all bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-800/50 disabled:border-slate-700 disabled:text-slate-500 disabled:shadow-none"
                   aria-haspopup="true" aria-expanded={isFlaggedDropdownOpen}
               >
                   <FlagIcon className="w-5 h-5" />
@@ -146,14 +150,14 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
                   <ChevronDownIcon className={`w-4 h-4 transition-transform ${isFlaggedDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {isFlaggedDropdownOpen && flaggedQuestions.size > 0 && (
-                  <div className="absolute right-0 mt-2 w-72 bg-slate-900/80 backdrop-blur-lg border border-slate-700 rounded-md shadow-lg z-20 animate-fade-in origin-top-right">
+                  <div className="glass-panel glass-panel-popover absolute right-0 mt-2 w-72 rounded-md shadow-lg z-20 animate-fade-in origin-top-right">
                       <ul className="py-1 max-h-60 overflow-y-auto">
                           {Array.from(flaggedQuestions).sort((a, b) => a - b).map(qNo => {
                               const question = questions.find(q => q.No === qNo);
                               return (
                                   <li key={qNo}>
                                       <button onClick={() => goToQuestion(qNo)} className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50">
-                                          <span className="font-bold text-brand-primary">Q{qNo}:</span> {question?.Question.substring(0, 40)}...
+                                          <span className="font-bold text-brand-primary">Q{question?.No}:</span> {question?.Question.substring(0, 40)}...
                                       </button>
                                   </li>
                               );
@@ -162,12 +166,13 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
                   </div>
               )}
             </div>
-            <div className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors border ${
-              isTimeLow 
-              ? 'bg-red-500/10 text-red-300 border-red-500/30 animate-pulse-warning' 
-              : 'bg-slate-800/50 text-slate-300 border-slate-700'
+            <div className={`flex items-center gap-3 rounded-xl px-4 py-2 transition-all duration-300 border shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10 backdrop-blur-sm ${
+              isTimeLow
+              ? 'bg-red-900/30 text-red-200 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse-warning'
+              // eslint-disable-next-line indent
+              : 'bg-slate-800/50 text-slate-200 border-slate-700 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.4)]'
             }`}>
-              <ClockIcon className="w-6 h-6" />
+              <HourglassIcon className="w-5 h-5 animate-spin-slow" />
               <span className="text-lg font-bold tabular-nums tracking-wider">{formatTime(timeRemaining)}</span>
             </div>
           </div>
@@ -201,7 +206,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
           value={userAnswers[currentQuestion.No] || ''}
           onChange={handleAnswerChange}
           placeholder="Compose your answer..."
-          className="w-full h-48 md:h-64 p-4 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500"
+          className="w-full flex-grow p-4 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500 min-h-[150px] sm:min-h-[200px] md:min-h-[250px]"
         />
          <div className="mt-4 border-t border-slate-700/80 pt-4">
             <div className="flex items-center">
@@ -240,7 +245,9 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
           onClick={toggleFlag}
           className={`w-full sm:w-auto px-6 py-3 font-semibold rounded-lg transition flex items-center justify-center gap-2 border order-2 sm:order-none ${
             isCurrentQuestionFlagged
+              // eslint-disable-next-line indent
               ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50'
+              // eslint-disable-next-line indent
               : 'bg-slate-700/50 border-slate-600 hover:bg-slate-700 text-slate-300'
           }`}
         >

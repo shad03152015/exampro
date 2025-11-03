@@ -51,7 +51,7 @@ const ThemePicker: React.FC<ThemePickerProps> = ({ currentTheme, onChangeTheme }
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-slate-900/80 backdrop-blur-lg border border-slate-700/80 rounded-lg shadow-2xl shadow-black/30 z-20 p-4 animate-fade-in origin-top-right">
+        <div className="glass-panel glass-panel-popover absolute right-0 mt-2 w-48 rounded-lg shadow-2xl shadow-black/30 z-20 p-4 animate-fade-in origin-top-right">
           <p className="text-sm font-semibold text-slate-200 mb-3">Select a Theme</p>
           <div className="grid grid-cols-4 gap-2">
             {THEME_COLORS.map(color => (

@@ -6,17 +6,26 @@ import ResultsView from './components/ResultsView';
 import { BookOpenIcon, SparklesIcon } from './components/IconComponents';
 import Spinner from './components/Spinner';
 import ThemePicker from './components/ThemePicker';
-import { hexToHsl, hexToRgb } from './utils/colorUtils';
+import BackgroundPicker from './components/BackgroundPicker';
+import { hexToHsl, hexToRgb, isColorLight } from './utils/colorUtils';
 
 const SUBJECT_STORAGE_KEY = 'examBar2026LastSelectedSubject';
+const NUM_QUESTIONS_STORAGE_KEY = 'examBar2026NumQuestions';
 const THEME_STORAGE_KEY = 'examBar2026ThemeColor';
+const BACKGROUND_STORAGE_KEY = 'examBar2026BackgroundColor';
+
 const DEFAULT_THEME_COLOR = '#4f46e5'; // Default Indigo
+const DEFAULT_BACKGROUND = 'gradient';
+const DEFAULT_NUM_QUESTIONS = '10';
 
 const App: React.FC = () => {
   const [examStatus, setExamStatus] = useState<ExamStatus>(ExamStatus.Idle);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [selectedSubject, setSelectedSubject] = useState<string>(
     () => localStorage.getItem(SUBJECT_STORAGE_KEY) || ''
+  );
+  const [numQuestions, setNumQuestions] = useState<string>(
+    () => localStorage.getItem(NUM_QUESTIONS_STORAGE_KEY) || DEFAULT_NUM_QUESTIONS
   );
   
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
@@ -26,6 +35,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME_COLOR);
+  const [background, setBackground] = useState<string>(() => localStorage.getItem(BACKGROUND_STORAGE_KEY) || DEFAULT_BACKGROUND);
 
   // Effect to apply the theme color globally via CSS variables
   useEffect(() => {
@@ -40,6 +50,22 @@ const App: React.FC = () => {
       localStorage.setItem(THEME_STORAGE_KEY, themeColor);
     }
   }, [themeColor]);
+
+  // Effect to apply the background and handle light/dark mode
+  useEffect(() => {
+    document.body.classList.remove('bg-animated-gradient', 'theme-light');
+    
+    if (background === 'gradient') {
+      document.body.classList.add('bg-animated-gradient');
+      document.body.style.backgroundColor = '';
+    } else {
+      document.body.style.backgroundColor = background;
+      if (isColorLight(background)) {
+        document.body.classList.add('theme-light');
+      }
+    }
+    localStorage.setItem(BACKGROUND_STORAGE_KEY, background);
+  }, [background]);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -65,6 +91,10 @@ const App: React.FC = () => {
     localStorage.setItem(SUBJECT_STORAGE_KEY, selectedSubject);
   }, [selectedSubject]);
 
+  useEffect(() => {
+    localStorage.setItem(NUM_QUESTIONS_STORAGE_KEY, numQuestions);
+  }, [numQuestions]);
+
 
   const startExam = useCallback(async () => {
     if (!selectedSubject) {
@@ -81,8 +111,18 @@ const App: React.FC = () => {
       if (questions.length === 0) {
         throw new Error("No questions could be found for the selected subject.");
       }
+      
+      // Shuffle questions for variety
+      const shuffled = [...questions].sort(() => 0.5 - Math.random());
+      
+      const desiredCount = numQuestions === 'All' ? shuffled.length : parseInt(numQuestions, 10);
+      const finalQuestions = shuffled.slice(0, Math.min(desiredCount, shuffled.length));
 
-      setActiveQuestions(questions);
+      if (finalQuestions.length === 0) {
+        throw new Error("Not enough questions available for the selected number.");
+      }
+
+      setActiveQuestions(finalQuestions);
       setUserAnswers({});
       setExamStatus(ExamStatus.Active);
 
@@ -91,7 +131,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedSubject]);
+  }, [selectedSubject, numQuestions]);
 
   const finishExam = useCallback((finalAnswers: UserAnswers) => {
     setUserAnswers(finalAnswers);
@@ -114,11 +154,11 @@ const App: React.FC = () => {
     }
 
     return (
-      <div className="text-center p-8 md:p-12 bg-slate-900/40 backdrop-blur-2xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/30 animate-fade-in w-full max-w-2xl">
+      <div className="glass-panel text-center p-6 md:p-12 rounded-3xl shadow-2xl shadow-black/30 animate-fade-in w-full max-w-2xl">
         <BookOpenIcon className="w-16 h-16 mx-auto text-brand-primary text-glow" />
-        <h1 className="text-5xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Bar 2026</h1>
+        <h1 className="text-4xl md:text-5xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Bar 2026</h1>
         <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
-          Select a subject to begin your personalized practice exam.
+          Select your subject and number of questions to begin.
         </p>
         
         {error && (
@@ -127,21 +167,40 @@ const App: React.FC = () => {
             </div>
         )}
 
-        <div className="mb-8 w-full max-w-sm mx-auto">
-            <label htmlFor="subject-select" className="sr-only">
-                Select Subject
-            </label>
-            <select
-                id="subject-select"
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full text-center text-lg p-3 border border-slate-600 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/60 appearance-none"
-                aria-label="Select a subject for the exam"
-            >
-              {availableSubjects.map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
+        <div className="mb-8 w-full max-w-md mx-auto flex flex-col sm:flex-row gap-4">
+            <div className='flex-grow'>
+              <label htmlFor="subject-select" className="sr-only">
+                  Select Subject
+              </label>
+              <select
+                  id="subject-select"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="select-embossed w-full text-center text-lg p-3 border rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition appearance-none"
+                  aria-label="Select a subject for the exam"
+              >
+                {availableSubjects.map(subject => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
+              </select>
+            </div>
+            <div className='sm:w-48'>
+               <label htmlFor="num-questions-select" className="sr-only">
+                  Number of Questions
+              </label>
+              <select
+                  id="num-questions-select"
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(e.target.value)}
+                  className="select-embossed w-full text-center text-lg p-3 border rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition appearance-none"
+                  aria-label="Select number of questions"
+              >
+                <option value="5">5 Questions</option>
+                <option value="10">10 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="All">All Questions</option>
+              </select>
+            </div>
         </div>
         <button
           onClick={startExam}
@@ -162,21 +221,28 @@ const App: React.FC = () => {
         return <ResultsView questions={activeQuestions} userAnswers={userAnswers} onRestart={restartExam} />;
       case ExamStatus.Idle:
       default:
-        return renderIdleContent();
+        return (
+          <div className="flex-grow flex items-center justify-center p-5">
+            {renderIdleContent()}
+          </div>
+        );
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      <header className="w-full bg-slate-900/60 backdrop-blur-lg border-b border-slate-700/80 p-4 flex justify-between items-center sticky top-0 z-50">
+      <header className="glass-panel glass-panel-header w-full border-b p-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <SparklesIcon className="w-8 h-8 text-brand-primary text-glow animate-subtle-glow" />
-          <h1 className="text-2xl font-bold tracking-tight">Exam Bar 2026</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Exam Bar 2026</h1>
         </div>
-        <ThemePicker currentTheme={themeColor} onChangeTheme={setThemeColor} />
+        <div className="flex items-center gap-2">
+          <BackgroundPicker currentBackground={background} onChangeBackground={setBackground} />
+          <ThemePicker currentTheme={themeColor} onChangeTheme={setThemeColor} />
+        </div>
       </header>
       
-      <main className="flex-grow flex items-center justify-center p-5">
+      <main className="flex-grow flex flex-col">
         {renderContent()}
       </main>
     </div>

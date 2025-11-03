@@ -132,27 +132,27 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
   }, []);
 
   return (
-    <div className="w-full lg:w-[90%] bg-slate-900/40 backdrop-blur-2xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/30 p-6 md:p-10 animate-fade-in">
+    <div className="glass-panel w-full flex-grow p-6 md:p-10 animate-fade-in flex flex-col">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-slate-200">Exam Results</h1>
-        <p className="text-7xl font-black text-brand-primary mt-4 text-glow">
+        <p className="text-6xl md:text-7xl font-black text-brand-primary mt-4 text-glow">
           {score} / {questions.length}
         </p>
         <p className="text-2xl text-slate-400">({scorePercentage.toFixed(0)}%)</p>
       </div>
 
-      <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 -mr-4">
+      <div className="flex-grow space-y-6 overflow-y-auto pr-4 -mr-4">
         {questions.map((question) => {
            const userAnswer = userAnswers[question.No] || 'No answer provided';
            const isCorrect = checkAnswerCorrectness(question, userAnswer);
            
            return (
             <div key={question.No} className={`bg-slate-800/40 p-4 rounded-xl border transition-all duration-300 ${isCorrect ? 'border-green-500/30 hover:border-green-500/60' : 'border-red-500/30 hover:border-red-500/60'}`}>
-              <div className="flex justify-between items-start gap-4">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
                   <h3 className="text-lg font-semibold mb-2 flex-1 text-slate-200">{question.No}. {question.Question}</h3>
                   {isCorrect ? 
-                    <span className="flex-shrink-0 flex items-center gap-1 text-green-400 font-bold ml-4"><CheckCircleIcon className="w-6 h-6" />Correct</span> : 
-                    <span className="flex-shrink-0 flex items-center gap-1 text-red-400 font-bold ml-4"><XCircleIcon className="w-6 h-6" />Incorrect</span>
+                    <span className="flex-shrink-0 flex items-center gap-1 text-green-400 font-bold sm:ml-4"><CheckCircleIcon className="w-6 h-6" />Correct</span> : 
+                    <span className="flex-shrink-0 flex items-center gap-1 text-red-400 font-bold sm:ml-4"><XCircleIcon className="w-6 h-6" />Incorrect</span>
                   }
               </div>
               

@@ -54,3 +54,18 @@ export const hexToRgb = (hex: string): { r: number; g: number; b: number } | nul
       }
     : null;
 };
+
+/**
+ * Determines if a hex color is light or dark based on its luminance.
+ * @param {string} hex - The hex color string.
+ * @returns {boolean} - True if the color is light, false if dark.
+ */
+export const isColorLight = (hex: string): boolean => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return false; // Default to dark if color is invalid
+
+  // Formula for perceived brightness (luminance)
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  
+  return luminance > 0.5;
+};
