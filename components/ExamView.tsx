@@ -1,10 +1,22 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Question, UserAnswers } from '../types';
-import { HourglassIcon, FlagIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon } from './IconComponents';
+import { HourglassIcon, FlagIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon, MicrophoneIcon } from './IconComponents';
 
 interface ExamViewProps {
   questions: Question[];
   onFinish: (answers: UserAnswers) => void;
+}
+
+// FIX: Add type definition for SpeechRecognition to resolve TypeScript errors.
+interface SpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: any) => void;
+  onerror: (event: any) => void;
+  onend: () => void;
+  stop: () => void;
+  start: () => void;
 }
 
 const TIME_PER_QUESTION_SECONDS = 120; // 2 minutes per question
@@ -24,6 +36,10 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const [confirmingSubmit, setConfirmingSubmit] = useState<boolean>(false);
   const [isFlaggedDropdownOpen, setIsFlaggedDropdownOpen] = useState<boolean>(false);
   const [isAnswerVisible, setIsAnswerVisible] = useState<boolean>(false);
+
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const flaggedDropdownRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -37,9 +53,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
 
   // Timer countdown effect
    useEffect(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setTimeRemaining(prevTime => {
         if (prevTime <= 1) {
@@ -50,77 +64,114 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
         return prevTime - 1;
       });
     }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [handleSubmit]);
+
+  // Speech Recognition Effect
+  useEffect(() => {
+    // FIX: Cast window to any to access SpeechRecognition API which may not be in default types.
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setIsSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (finalTranscript) {
+          setUserAnswers(prev => {
+            const existingAnswer = prev[currentQuestion.No] || '';
+            const separator = existingAnswer.length > 0 && !/\s$/.test(existingAnswer) ? ' ' : '';
+            return {
+              ...prev,
+              [currentQuestion.No]: existingAnswer + separator + finalTranscript.trim()
+            };
+          });
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, [currentQuestion.No]);
 
 
   useEffect(() => {
-    if (!isLastQuestion && confirmingSubmit) {
-      setConfirmingSubmit(false);
-    }
+    if (!isLastQuestion && confirmingSubmit) setConfirmingSubmit(false);
     setIsAnswerVisible(false);
   }, [currentIndex, isLastQuestion, confirmingSubmit]);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-        if (flaggedDropdownRef.current && !flaggedDropdownRef.current.contains(event.target as Node)) {
-            setIsFlaggedDropdownOpen(false);
-        }
+      if (flaggedDropdownRef.current && !flaggedDropdownRef.current.contains(event.target as Node)) {
+        setIsFlaggedDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleAnswerChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setUserAnswers(prev => ({
-      ...prev,
-      [currentQuestion.No]: e.target.value,
-    }));
-  }, [currentQuestion]);
-
-  const goToNext = useCallback(() => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+  const handleToggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
     }
-  }, [currentIndex, questions.length]);
+  };
 
-  const goToPrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-    }
-  }, [currentIndex]);
+  const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUserAnswers(prev => ({ ...prev, [currentQuestion.No]: e.target.value }));
+  };
+
+  const goToNext = () => {
+    if (currentIndex < questions.length - 1) setCurrentIndex(prev => prev + 1);
+  };
+
+  const goToPrevious = () => {
+    if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
+  };
   
-  const goToQuestion = useCallback((questionNo: number) => {
+  const goToQuestion = (questionNo: number) => {
     const questionIndex = questions.findIndex(q => q.No === questionNo);
     if (questionIndex !== -1) {
-        setCurrentIndex(questionIndex);
-        setIsFlaggedDropdownOpen(false);
+      setCurrentIndex(questionIndex);
+      setIsFlaggedDropdownOpen(false);
     }
-  }, [questions]);
+  };
 
-  const toggleFlag = useCallback(() => {
+  const toggleFlag = () => {
     setFlaggedQuestions(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(currentQuestion.No)) {
-            newSet.delete(currentQuestion.No);
-        } else {
-            newSet.add(currentQuestion.No);
-        }
-        return newSet;
+      const newSet = new Set(prev);
+      if (newSet.has(currentQuestion.No)) newSet.delete(currentQuestion.No);
+      else newSet.add(currentQuestion.No);
+      return newSet;
     });
-  }, [currentQuestion.No]);
+  };
 
   const handleSubmitClick = () => {
     if (flaggedQuestions.size > 0 && !confirmingSubmit) {
-        setConfirmingSubmit(true);
-        return;
+      setConfirmingSubmit(true);
+      return;
     }
     handleSubmit();
   };
@@ -129,15 +180,15 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const isCurrentQuestionFlagged = flaggedQuestions.has(currentQuestion.No);
 
   return (
-    <div className="glass-panel w-full flex-grow p-6 md:p-10 flex flex-col animate-slide-in-up">
-      <header className="mb-6">
+    <div className="glass-panel w-full flex-grow p-4 sm:p-6 md:p-8 flex flex-col animate-slide-in-up">
+      <header className="mb-4 md:mb-6">
         <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
           <div className='text-sm text-slate-400 flex flex-col sm:flex-row sm:items-center sm:gap-4'>
-            <span>Question {currentIndex + 1} of {questions.length}</span>
+            <span className="whitespace-nowrap">Question {currentIndex + 1} of {questions.length}</span>
             <span className="font-semibold hidden sm:block text-slate-600">•</span>
             <span className="font-semibold text-slate-300">{currentQuestion.subject}</span>
           </div>
-          <div className="flex items-center gap-4 self-end md:self-center">
+          <div className="flex items-center gap-2 sm:gap-4 self-end md:self-center">
             <div className="relative" ref={flaggedDropdownRef}>
               <button
                   onClick={() => setIsFlaggedDropdownOpen(prev => !prev)}
@@ -146,7 +197,8 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
                   aria-haspopup="true" aria-expanded={isFlaggedDropdownOpen}
               >
                   <FlagIcon className="w-5 h-5" />
-                  <span className="font-bold">{flaggedQuestions.size} Flagged</span>
+                  <span className="font-bold hidden sm:inline">{flaggedQuestions.size} Flagged</span>
+                   <span className="font-bold sm:hidden">{flaggedQuestions.size}</span>
                   <ChevronDownIcon className={`w-4 h-4 transition-transform ${isFlaggedDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {isFlaggedDropdownOpen && flaggedQuestions.size > 0 && (
@@ -169,7 +221,6 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
             <div className={`flex items-center gap-3 rounded-xl px-4 py-2 transition-all duration-300 border shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10 backdrop-blur-sm ${
               isTimeLow
               ? 'bg-red-900/30 text-red-200 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse-warning'
-              // eslint-disable-next-line indent
               : 'bg-slate-800/50 text-slate-200 border-slate-700 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.4)]'
             }`}>
               <HourglassIcon className="w-5 h-5 animate-spin-slow" />
@@ -200,15 +251,30 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
         </div>
       </header>
       
-      <main className="flex-grow flex flex-col">
-        <h2 className="text-2xl md:text-3xl font-bold mb-4 text-slate-100">{currentQuestion.Question}</h2>
-        <textarea
-          value={userAnswers[currentQuestion.No] || ''}
-          onChange={handleAnswerChange}
-          placeholder="Compose your answer..."
-          className="w-full flex-grow p-4 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500 min-h-[150px] sm:min-h-[200px] md:min-h-[250px]"
-        />
-         <div className="mt-4 border-t border-slate-700/80 pt-4">
+      <main className="flex-grow flex flex-col min-h-0">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-100 flex-shrink-0">{currentQuestion.Question}</h2>
+        <div className="relative w-full flex-grow">
+          <textarea
+            value={userAnswers[currentQuestion.No] || ''}
+            onChange={handleAnswerChange}
+            placeholder="Compose your answer or use the microphone..."
+            className="w-full h-full p-4 pr-16 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500"
+          />
+          {isSpeechSupported && (
+            <button
+              onClick={handleToggleListening}
+              className={`absolute top-4 right-4 p-3 rounded-full transition-all duration-300 backdrop-blur-sm
+                ${isListening
+                  ? 'bg-red-500/50 text-red-200 ring-2 ring-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+            >
+              <MicrophoneIcon className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+         <div className="mt-4 border-t border-slate-700/80 pt-4 flex-shrink-0">
             <div className="flex items-center">
               <button
                 onClick={() => setIsAnswerVisible(prev => !prev)}
@@ -233,7 +299,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
         </div>
       </main>
 
-      <footer className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <footer className="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 flex-shrink-0">
         <button
           onClick={goToPrevious} disabled={currentIndex === 0}
           className="w-full sm:w-auto px-6 py-3 bg-slate-700/50 border border-slate-600 hover:bg-slate-700 font-semibold rounded-lg transition text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed order-1"
@@ -245,9 +311,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
           onClick={toggleFlag}
           className={`w-full sm:w-auto px-6 py-3 font-semibold rounded-lg transition flex items-center justify-center gap-2 border order-2 sm:order-none ${
             isCurrentQuestionFlagged
-              // eslint-disable-next-line indent
               ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50'
-              // eslint-disable-next-line indent
               : 'bg-slate-700/50 border-slate-600 hover:bg-slate-700 text-slate-300'
           }`}
         >
@@ -265,7 +329,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
               )}
               <button
                 onClick={handleSubmitClick}
-                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-[0_0_15px_rgba(16,185,129,0.5)] hover:shadow-[0_0_25px_rgba(16,185,129,0.7)]"
+                className="px-8 py-3 bg-emerald-500 hover:opacity-80 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-[0_0_15px_rgba(16,185,129,0.5)] hover:shadow-[0_0_25px_rgba(16,185,129,0.7)]"
               >
                 {confirmingSubmit ? 'Confirm & Submit' : 'Submit Exam'}
               </button>
@@ -273,7 +337,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
           ) : (
             <button
               onClick={goToNext}
-              className="w-full sm:w-auto px-8 py-3 bg-brand-primary text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-glow-primary hover:shadow-glow-primary-lg"
+              className="w-full sm:w-auto px-8 py-3 bg-brand-primary hover:opacity-80 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-glow-primary hover:shadow-glow-primary-lg"
             >
               Next
             </button>
