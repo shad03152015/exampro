@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Question, ExamStatus, UserAnswers } from './types';
 import { getAvailableSubjects, getQuestionsForSubject } from './services/backendService';
+import { getSmartlyOrderedQuestions } from './services/geminiService';
 import ExamView from './components/ExamView';
 import ResultsView from './components/ResultsView';
 import { BookOpenIcon, SparklesIcon } from './components/IconComponents';
@@ -46,6 +47,7 @@ const App: React.FC = () => {
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME_COLOR);
@@ -118,22 +120,39 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setLoadingMessage('Fetching exam questions...');
     
     try {
-      const questions = await getQuestionsForSubject(selectedSubject);
+      const allSubjectQuestions = await getQuestionsForSubject(selectedSubject);
       
-      if (questions.length === 0) {
+      if (allSubjectQuestions.length === 0) {
         throw new Error("No questions could be found for the selected subject.");
       }
       
-      // Use Fisher-Yates algorithm for a truly random shuffle
-      const shuffled = shuffleArray(questions);
-      
+      const shuffled = shuffleArray(allSubjectQuestions);
       const desiredCount = numQuestions === 'All' ? shuffled.length : parseInt(numQuestions, 10);
-      const finalQuestions = shuffled.slice(0, Math.min(desiredCount, shuffled.length));
+      const questionSubset = shuffled.slice(0, Math.min(desiredCount, shuffled.length));
 
-      if (finalQuestions.length === 0) {
+      if (questionSubset.length === 0) {
         throw new Error("Not enough questions available for the selected number.");
+      }
+
+      let finalQuestions = questionSubset;
+
+      try {
+        setLoadingMessage('Optimizing question order with AI...');
+        const orderedIds = await getSmartlyOrderedQuestions(questionSubset);
+        
+        const questionMap = new Map(questionSubset.map(q => [q.No, q]));
+        const smartlyOrderedQuestions = orderedIds.map(id => questionMap.get(id)).filter(Boolean) as Question[];
+        
+        if (smartlyOrderedQuestions.length === questionSubset.length) {
+            finalQuestions = smartlyOrderedQuestions;
+        } else {
+             console.warn("AI ordering returned a mismatched number of questions. Falling back to random order.");
+        }
+      } catch (aiError) {
+        console.warn("AI ordering failed, falling back to random order:", aiError);
       }
 
       setActiveQuestions(finalQuestions);
@@ -144,6 +163,7 @@ const App: React.FC = () => {
       setError(err instanceof Error ? err.message : 'An unknown error occurred while starting the exam.');
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
   }, [selectedSubject, numQuestions]);
 
@@ -221,7 +241,7 @@ const App: React.FC = () => {
           disabled={isLoading || availableSubjects.length === 0}
           className="bg-brand-primary hover:opacity-80 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all transform hover:scale-105 shadow-glow-primary hover:shadow-glow-primary-lg disabled:opacity-50 disabled:cursor-wait disabled:shadow-none"
         >
-          {isLoading ? 'Loading...' : 'Start Exam'}
+          {isLoading ? (loadingMessage || 'Loading...') : 'Start Exam'}
         </button>
       </div>
     );

@@ -180,43 +180,53 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
   }, []);
 
   return (
-    <div className="glass-panel w-full lg:w-[90%] bg-slate-900/40 backdrop-blur-2xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/30 p-6 md:p-10 animate-fade-in">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-slate-200">Exam Results</h1>
-        <p className="text-7xl font-black text-brand-primary mt-4 text-glow">
+    <div className="w-full flex-grow flex flex-col p-4 sm:p-6 md:p-8 animate-fade-in">
+      <div className="text-center mb-8 flex-shrink-0">
+        <h1 className="text-3xl sm:text-4xl font-bold">Exam Results</h1>
+        <p className="text-6xl sm:text-7xl font-black text-brand-primary mt-4 text-glow">
           {score} / {questions.length}
         </p>
-        <p className="text-2xl text-slate-400">({scorePercentage.toFixed(0)}%)</p>
+        <p className="text-xl sm:text-2xl text-slate-400">({scorePercentage.toFixed(0)}%)</p>
       </div>
 
-      <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 -mr-4">
+      <div className="flex-grow space-y-6 overflow-y-auto p-1">
         {questions.map((question) => {
            const userAnswer = userAnswers[question.No] || 'No answer provided';
            const isCorrect = checkAnswerCorrectness(question, userAnswer);
            
+           const cardBorderStyle = isCorrect 
+            ? 'border-brand-primary/60'
+            : 'border-red-500/60';
+            
+           const statusTextStyle = isCorrect ? 'text-brand-primary' : 'text-red-400';
+           
+           const yourAnswerPanelStyle = isCorrect
+            ? 'bg-[rgba(var(--brand-primary-rgb),0.15)]'
+            : 'bg-red-500/10 border border-red-500/50';
+
            return (
-            <div key={question.No} className={`bg-slate-800/40 p-4 rounded-xl border transition-all duration-300 ${isCorrect ? 'border-green-500/30 hover:border-green-500/60' : 'border-red-500/30 hover:border-red-500/60'}`}>
-              <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-lg font-semibold mb-2 flex-1 text-slate-200">{question.No}. {question.Question}</h3>
-                  {isCorrect ? 
-                    <span className="flex-shrink-0 flex items-center gap-1 text-green-400 font-bold ml-4"><CheckCircleIcon className="w-6 h-6" />Correct</span> : 
-                    <span className="flex-shrink-0 flex items-center gap-1 text-red-400 font-bold ml-4"><XCircleIcon className="w-6 h-6" />Incorrect</span>
-                  }
+            <div key={question.No} className={`glass-panel p-4 md:p-6 rounded-2xl border transition-all duration-300 shadow-glow-primary ${cardBorderStyle}`}>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                  <h3 className="text-lg font-semibold mb-2 flex-1">{question.No}. {question.Question}</h3>
+                  <span className={`flex-shrink-0 flex items-center gap-2 font-bold text-lg ${statusTextStyle}`}>
+                    {isCorrect ? <CheckCircleIcon className="w-6 h-6" /> : <XCircleIcon className="w-6 h-6" />}
+                    {isCorrect ? 'Correct' : 'Incorrect'}
+                  </span>
               </div>
               
-              <div className="mt-2 space-y-3">
-                <div className={`p-3 rounded-md border-l-4 ${isCorrect ? 'bg-green-500/10 border-green-500' : 'bg-red-500/10 border-red-500'}`}>
-                    <p className="font-semibold text-sm text-slate-300">Your Answer:</p>
-                    <p className="text-slate-300 break-words">{userAnswer}</p>
+              <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className={`p-3 rounded-md shadow-inner ${yourAnswerPanelStyle}`}>
+                    <p className="font-semibold text-sm text-slate-300 mb-1">Your Answer:</p>
+                    <p className="text-slate-300 break-words text-opacity-90">{userAnswer}</p>
                 </div>
-                <div className="p-3 bg-slate-700/30 rounded-md border-l-4 border-slate-500">
-                    <p className="font-semibold text-sm text-slate-300">Suggested Answer:</p>
-                    <p className="text-slate-300 break-words">{question.Answer}</p>
+                <div className="p-3 bg-slate-900/30 rounded-md shadow-inner">
+                    <p className="font-semibold text-sm text-slate-300 mb-1">Suggested Answer:</p>
+                    <p className="text-slate-300 break-words text-opacity-90">{question.Answer}</p>
                 </div>
                 {!isCorrect && (
-                  <div className="mt-3">
+                  <div className="mt-2 lg:col-span-2">
                     {explanations[question.No] ? (
-                       <div className="p-3 bg-amber-500/10 rounded-lg border-l-4 border-amber-500 flex gap-3 animate-fade-in">
+                       <div className="p-3 bg-amber-900/20 shadow-inner rounded-lg flex gap-3 animate-fade-in">
                           <LightBulbIcon className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
                           <div>
                             <p className="font-semibold text-sm text-amber-200">Clarification:</p>
@@ -224,11 +234,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
                           </div>
                        </div>
                     ) : loadingExplanations[question.No] ? (
-                       <button disabled className="w-full sm:w-auto text-sm flex items-center justify-center gap-2 py-2 px-4 rounded-md bg-slate-700/50 border border-slate-600 text-slate-400 cursor-wait">
+                       <button disabled className="w-full sm:w-auto text-sm flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-700/50 border border-slate-600 text-slate-400 cursor-wait">
                          <Spinner size="sm" /> Generating...
                        </button>
                     ) : (
-                       <button onClick={() => handleShowExplanation(question, userAnswer)} className="text-sm py-2 px-4 rounded-md bg-slate-700/50 border border-slate-600 hover:bg-slate-700 text-slate-300 font-semibold transition">
+                       <button 
+                          onClick={() => handleShowExplanation(question, userAnswer)} 
+                          className="text-sm py-2 px-4 rounded-lg border font-semibold transition-all duration-300 border-brand-primary/50 text-brand-primary hover:bg-brand-primary/20 hover:shadow-glow-primary"
+                       >
                           Why was this wrong?
                        </button>
                     )}
@@ -241,7 +254,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
         })}
       </div>
       
-      <div className="text-center mt-8">
+      <div className="text-center mt-8 flex-shrink-0">
           <button
               onClick={onRestart}
               className="bg-brand-primary text-white font-bold py-3 px-8 rounded-lg text-lg transition-all transform hover:scale-105 shadow-glow-primary hover:shadow-glow-primary-lg"

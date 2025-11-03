@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { Question } from '../types';
 
-// FIX: Initialize the GoogleGenAI client.
-// Per coding guidelines, the API key must be read from process.env.API_KEY.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
- * Generates an explanation for why a user's answer is incorrect using the Gemini API.
+ * Generates a detailed, educational explanation for why a user's answer is incorrect.
  * @param question The exam question.
  * @param correctAnswer The correct answer.
  * @param userAnswer The user's incorrect answer.
@@ -17,32 +16,102 @@ export const getAnswerExplanation = async (
   userAnswer: string
 ): Promise<string> => {
   try {
-    // FIX: Select model for the task.
-    // Per coding guidelines, use 'gemini-2.5-flash' for basic text tasks.
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-2.5-pro'; // Upgraded to a more advanced model for nuanced understanding.
 
-    const prompt = `You are an expert law professor. Your role is to provide a concise and helpful explanation for a student who has answered an exam question incorrectly.
+    // A more sophisticated system instruction to guide the AI's persona and task.
+    const systemInstruction = `You are an expert law professor and a patient tutor. Your goal is to provide detailed, encouraging, and educational feedback to a law student. Your tone should be supportive, aiming to build understanding, not just to correct. Analyze the student's answer in the context of the question and the correct legal principle.`;
 
-Exam Question: "${question}"
+    // A structured prompt to elicit a more detailed and helpful explanation.
+    const prompt = `Please analyze the following exam response and provide a structured explanation.
 
-Correct Answer: "${correctAnswer}"
+**Exam Question:**
+"${question}"
 
-Student's Incorrect Answer: "${userAnswer}"
+**Correct Answer:**
+"${correctAnswer}"
 
-Please provide a brief explanation (2-3 sentences) clarifying why the student's answer is incorrect and highlighting the key concepts they missed. Focus on the core legal principle. Do not be condescending.`;
+**Student's Incorrect Answer:**
+"${userAnswer}"
 
-    // FIX: Call the Gemini API to generate content.
+**Your Explanation should follow this structure:**
+1.  **Positive Opener:** Start with an encouraging phrase (e.g., "That's a good attempt," or "I see where you're coming from.").
+2.  **Analysis of Misconception:** Briefly explain what the student's answer gets wrong or where the misunderstanding lies.
+3.  **Detailed Elaboration:** Clearly explain the correct legal principle in detail. Go beyond just restating the correct answer. Explain the 'why' behind the concept, perhaps with a simple analogy if applicable.
+4.  **Key Takeaway:** Conclude with a simple, memorable takeaway or a tip to help the student remember this concept for the future.`;
+
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
+      config: {
+        systemInstruction,
+      },
     });
 
-    // FIX: Extract text output from the response.
-    // Per coding guidelines, the .text property should be used to get the string output.
     return response.text;
   } catch (error) {
     console.error("Error generating explanation from Gemini API:", error);
-    // Propagate a user-friendly error message
     throw new Error("Failed to get explanation from AI service. Please try again later.");
+  }
+};
+
+/**
+ * Uses a Gemini model to reorder questions for a better learning experience,
+ * prioritizing topic diversity.
+ * @param questions The array of questions to reorder.
+ * @returns A promise that resolves to an array of question numbers in the new order.
+ */
+export const getSmartlyOrderedQuestions = async (
+  questions: Question[]
+): Promise<number[]> => {
+  try {
+    const model = 'gemini-2.5-pro';
+
+    const questionsForPrompt = questions.map(q => ({
+      id: q.No,
+      question: q.Question
+    }));
+
+    const systemInstruction = `You are an expert curriculum designer and exam creator. Your task is to reorder a list of questions to create the most effective and logical study session. The goal is to maximize topic diversity by avoiding placing questions with very similar semantic content or keywords next to each other. Analyze the provided questions and return the optimized order.`;
+
+    const prompt = `Here is the list of questions to reorder:
+${JSON.stringify(questionsForPrompt, null, 2)}
+
+Please return a JSON object with a single key "orderedIds" which is an array of the question IDs in the new, optimized order. For example: { "orderedIds": [3, 1, 4, 2] }`;
+
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            orderedIds: {
+              type: Type.ARRAY,
+              items: { type: Type.INTEGER },
+            },
+          },
+          required: ['orderedIds'],
+        },
+      },
+    });
+
+    const jsonText = response.text.trim();
+    const result = JSON.parse(jsonText);
+
+    if (result.orderedIds && Array.isArray(result.orderedIds) && result.orderedIds.length === questions.length) {
+      const originalIds = new Set(questions.map(q => q.No));
+      const returnedIds = new Set(result.orderedIds);
+      if (originalIds.size === returnedIds.size && [...originalIds].every(id => returnedIds.has(id))) {
+        return result.orderedIds;
+      }
+    }
+    
+    throw new Error("AI-generated order was invalid or incomplete.");
+
+  } catch (error) {
+    console.error("Error getting smart order from Gemini API:", error);
+    throw new Error("Failed to get optimized order from AI service.");
   }
 };
