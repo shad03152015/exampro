@@ -9,11 +9,14 @@ import Spinner from './components/Spinner';
 import ThemePicker from './components/ThemePicker';
 import BackgroundPicker from './components/BackgroundPicker';
 import { hexToHsl, hexToRgb, isColorLight } from './utils/colorUtils';
+import LoginView from './components/LoginView';
+import UserMenu from './components/UserMenu';
 
 const SUBJECT_STORAGE_KEY = 'examBar2026LastSelectedSubject';
 const NUM_QUESTIONS_STORAGE_KEY = 'examBar2026NumQuestions';
 const THEME_STORAGE_KEY = 'examBar2026ThemeColor';
 const BACKGROUND_STORAGE_KEY = 'examBar2026BackgroundColor';
+const AUTH_STORAGE_KEY = 'examBar2026Authenticated';
 
 const DEFAULT_THEME_COLOR = '#4f46e5'; // Default Indigo
 const DEFAULT_BACKGROUND = 'gradient';
@@ -53,6 +56,8 @@ const App: React.FC = () => {
   const [themeColor, setThemeColor] = useState<string>(() => localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME_COLOR);
   const [background, setBackground] = useState<string>(() => localStorage.getItem(BACKGROUND_STORAGE_KEY) || DEFAULT_BACKGROUND);
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!sessionStorage.getItem(AUTH_STORAGE_KEY));
+
   // Effect to apply the theme color globally via CSS variables
   useEffect(() => {
     const hsl = hexToHsl(themeColor);
@@ -84,6 +89,7 @@ const App: React.FC = () => {
   }, [background]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchSubjects = async () => {
       setIsLoading(true);
       try {
@@ -101,7 +107,7 @@ const App: React.FC = () => {
       }
     };
     fetchSubjects();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     localStorage.setItem(SUBJECT_STORAGE_KEY, selectedSubject);
@@ -176,6 +182,20 @@ const App: React.FC = () => {
       setError(null);
       setExamStatus(ExamStatus.Idle);
   }, []);
+
+  const handleLoginSuccess = useCallback(() => {
+    sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    setIsAuthenticated(true);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    setIsAuthenticated(false);
+    setExamStatus(ExamStatus.Idle);
+    setUserAnswers({});
+    setActiveQuestions([]);
+  }, []);
+
 
   const renderIdleContent = () => {
     if (isLoading && availableSubjects.length === 0) {
@@ -273,11 +293,18 @@ const App: React.FC = () => {
         <div className="flex items-center gap-2">
           <BackgroundPicker currentBackground={background} onChangeBackground={setBackground} />
           <ThemePicker currentTheme={themeColor} onChangeTheme={setThemeColor} />
+          {isAuthenticated && <UserMenu onLogout={handleLogout} />}
         </div>
       </header>
       
       <main className="flex-grow flex flex-col">
-        {renderContent()}
+        {!isAuthenticated ? (
+          <div className="flex-grow flex items-center justify-center p-5">
+             <LoginView onLoginSuccess={handleLoginSuccess} />
+          </div>
+        ) : (
+          renderContent()
+        )}
       </main>
     </div>
   );

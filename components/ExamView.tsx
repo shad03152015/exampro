@@ -7,13 +7,41 @@ interface ExamViewProps {
   onFinish: (answers: UserAnswers) => void;
 }
 
-// FIX: Add type definition for SpeechRecognition to resolve TypeScript errors.
+// FIX: Add detailed type definitions for SpeechRecognition API to resolve TypeScript errors.
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
 interface SpeechRecognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  onresult: (event: any) => void;
-  onerror: (event: any) => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
   onend: () => void;
   stop: () => void;
   start: () => void;
@@ -42,7 +70,8 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const flaggedDropdownRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // FIX: Changed NodeJS.Timeout to a browser-compatible type to resolve namespace error.
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentQuestion = useMemo(() => questions[currentIndex], [questions, currentIndex]);
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -73,7 +102,7 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSpeechSupported(true);
-      const recognition = new SpeechRecognition();
+      const recognition: SpeechRecognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
