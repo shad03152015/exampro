@@ -97,3 +97,89 @@ export const initializeDefaultUsers = async (): Promise<void> => {
     console.error('Error initializing default users:', error);
   }
 };
+
+/**
+ * Validate email against authorized users
+ */
+export const validateEmail = async (email: string): Promise<boolean> => {
+  try {
+    await initializeDefaultUsers();
+    const collection = await getUsersCollection();
+    const user = await collection.findOne({
+      email: email.toLowerCase(),
+      is_active: true
+    });
+    return user !== null;
+  } catch (error) {
+    console.error('Email validation error:', error);
+    return false;
+  }
+};
+
+/**
+ * Add a new authorized user
+ */
+export const addAuthorizedUser = async (email: string, name?: string): Promise<boolean> => {
+  try {
+    await initializeDefaultUsers();
+    const collection = await getUsersCollection();
+    const existingUser = await collection.findOne({ email: email.toLowerCase() });
+    if (existingUser) return false;
+
+    const newUser: Omit<AuthorizedUser, '_id'> = {
+      email: email.toLowerCase(),
+      name: name || 'New User',
+      is_active: true,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    const result = await collection.insertOne(newUser);
+    return result.acknowledged;
+  } catch (error) {
+    console.error('Error adding authorized user:', error);
+    return false;
+  }
+};
+
+/**
+ * Remove an authorized user (soft delete)
+ */
+export const removeAuthorizedUser = async (email: string): Promise<boolean> => {
+  try {
+    await initializeDefaultUsers();
+    const collection = await getUsersCollection();
+    const result = await collection.updateOne(
+      { email: email.toLowerCase() },
+      { $set: { is_active: false, updated_at: new Date() } }
+    );
+    return result.modifiedCount > 0;
+  } catch (error) {
+    console.error('Error removing authorized user:', error);
+    return false;
+  }
+};
+
+/**
+ * Get all authorized users
+ */
+export const getAuthorizedUsers = async (): Promise<Array<{email: string, name: string}>> => {
+  try {
+    await initializeDefaultUsers();
+    const collection = await getUsersCollection();
+    const users = await collection.find(
+      { is_active: true },
+      {
+        projection: { email: 1, name: 1, _id: 0 },
+        sort: { email: 1 }
+      }
+    ).toArray();
+    return users.map(user => ({
+      email: user.email,
+      name: user.name || 'Unknown User'
+    }));
+  } catch (error) {
+    console.error('Error fetching authorized users:', error);
+    return [];
+  }
+};
