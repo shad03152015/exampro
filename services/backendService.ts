@@ -167,14 +167,23 @@ export const addAuthorizedUser = async (email: string, name?: string): Promise<b
  */
 export const removeAuthorizedUser = async (email: string): Promise<boolean> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-        const initialLength = authorizedUsers.length;
-        authorizedUsers = authorizedUsers.filter(user =>
-            user.email.toLowerCase() !== email.toLowerCase()
+        const collection = await getUsersCollection();
+
+        // Deactivate user instead of deleting (soft delete)
+        const result = await collection.updateOne(
+            { email: email.toLowerCase() },
+            {
+                $set: {
+                    is_active: false,
+                    updated_at: new Date()
+                }
+            }
         );
 
-        return authorizedUsers.length < initialLength;
+        return result.modifiedCount > 0;
     } catch (error) {
         console.error('Error removing authorized user:', error);
         return false;
