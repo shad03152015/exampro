@@ -93,10 +93,10 @@ const App: React.FC = () => {
   const refreshData = useCallback(async () => {
       try {
         const [subjects, questions] = await Promise.all([
-          getAvailableSubjects(),
-          getAllQuestions(),
+          questionsAPI.getSubjects(),
+          questionsAPI.getQuestions(),
         ]);
-        
+
         setAvailableSubjects(subjects);
         setAllQuestions(questions);
 
