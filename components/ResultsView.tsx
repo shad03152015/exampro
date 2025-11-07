@@ -4,174 +4,108 @@ import { CheckCircleIcon, XCircleIcon, LightBulbIcon, InformationCircleIcon } fr
 import { getAnswerExplanation } from '../services/geminiService';
 import Spinner from './Spinner';
 
-
 interface ResultsViewProps {
   questions: Question[];
   userAnswers: UserAnswers;
   onRestart: () => void;
 }
 
-// A list of common English stop words.
-const STOP_WORDS = new Set([
-  'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
-  'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
-  'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom',
-  'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been',
-  'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an',
-  'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at',
-  'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during',
-  'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out',
-  'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there',
-  'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most',
-  'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
-  'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now'
-]);
-
-// A simple synonym map for domain-specific terms to improve matching.
-// The key is the synonym, and the value is the canonical word we'll use for comparison.
-const SYNONYM_MAP: { [key: string]: string } = {
-  'authority': 'power',
-  'right': 'power',
-  'command': 'power',
-  'take': 'domain',
-  'seize': 'domain',
-  'levy': 'taxation',
-  'impose': 'taxation',
-  'collect': 'taxation',
-  'fifteen': '15',
-  'dismissed': 'dismissal',
-  'fired': 'dismissal',
-  'terminated': 'dismissal',
-  'duty': 'obligation',
-  'responsibility': 'obligation',
-  'presumed': 'assumed',
-  'court': 'tribunal',
-  'judge': 'tribunal',
-};
-
-// Define core keywords for each answer to prioritize key concepts.
 const ANSWER_KEYWORDS: { [key: number]: string[] } = {
-  // Civil Law
-  1: ['true', 'foreign', 'law', 'pleaded', 'proved', 'presumption', 'same', 'domestic'],
-  2: ['true', 'legitimation', 'died', 'before', 'marriage', 'benefit', 'descendants'],
-  3: ['died', 'same', 'time', 'no', 'transmission', 'rights', 'representation', 'survivorship', 'presumed', 'died', 'ahead', 'vested'],
-  4: ['void', 'marriage', 'ceremony', 'formal', 'requisite', 'absence', 'presence', 'officer'],
-  5: ['foreign', 'element'],
-  // Criminal Law
-  6: ['attempted', 'frustrated', 'consummated', 'stages', 'felony', 'overt', 'acts'],
-  7: ['conspiracy', 'agreement', 'felony', 'punishable', 'law', 'provides', 'penalty'],
-  8: ['dubio', 'pro', 'reo', 'doubt', 'accused', 'innocent', 'presumed'],
-  // Labor Law
-  9: ['labor-only', 'contracting', 'recruits', 'supplies', 'substantial', 'capital', 'principal'],
-  10: ['last-in', 'first-out', 'lifo', 'retrenchment', 'dismissed', 'hired', 'last'],
-  11: ['just', 'cause', 'dismissal', 'misconduct', 'disobedience', 'neglect', 'fraud'],
-  // Taxation Law
-  12: ['lifeblood', 'doctrine', 'taxes', 'government', 'paralyzed', 'imperious'],
-  13: ['tax', 'avoidance', 'evasion', 'legal', 'illegal', 'reduce', 'escape', 'fraud'],
-  14: ['police', 'power', 'eminent', 'domain', 'taxation', 'inherent'],
-  // Commercial Law
-  15: ['negotiable', 'instrument', 'written', 'contract', 'money', 'substitute', 'holder'],
-  16: ['piercing', 'corporate', 'veil', 'shareholders', 'liable', 'fraud', 'crime', 'disregards', 'personality'],
-  17: ['negotiable', 'writing', 'signed', 'unconditional', 'promise', 'money', 'demand', 'bearer'],
-  // Remedial Law
-  18: ['jurisdiction', 'authority', 'court', 'hear', 'decide', 'summons', 'voluntary', 'appearance'],
-  19: ['cause', 'action', 'act', 'omission', 'violates', 'right', 'plaintiff'],
-  20: ['precautionary', 'principle', 'environment', 'damage', 'uncertain', 'threat'],
-  // Legal Ethics
-  21: ['practicing', 'law', 'suspension', 'prohibited', 'attorney-in-fact', 'knowledge'],
-  22: ['represent', 'klyde', 'boni', 'disqualification', 'state', 'witness', 'prosecutor'],
-  23: ['allegiance', 'constitution', 'obey', 'laws', 'falsehood', 'groundless', 'delay'],
-  // Political Law
-  24: ['separation', 'powers', 'legislative', 'executive', 'judicial', 'branches', 'checks', 'balances'],
-  25: ['judicial', 'review', 'power', 'courts', 'constitution', 'unconstitutional', 'void'],
-  26: ['sovereignty', 'supreme', 'power', 'state', 'governed', 'internal', 'external']
+  1: ['true', 'foreign law', 'not pleaded', 'not proved', 'presumption', 'same', 'domestic law'],
+  2: ['true', 'legitimation', 'died before', 'marriage', 'benefit their descendants'],
+  3: ['marilyn', 'merit', 'presumed', 'died', 'same time', 'no transmission', 'representation', 'insurance', 'survivorship', 'vested'],
+  4: ['void', 'ceremony', 'formal requisite', 'solemnizing officer'],
+  5: ['illegitimate', 'outside', 'valid wedlock', 'article 165'],
+  6: ['yes', 'recognized', 'valid', 'naturalized citizen', 'foreign country', 'nationality principle'],
+  7: ['petition', 'recognition', 'foreign divorce', 'declaratory relief'],
+  8: ['no', 'claims', 'not sustained', 'impugn', 'legitimacy', 'not the legal husband'],
+  9: ['yes', 'admitted to probate', 'holographic will', 'philippine law', 'article 816'],
+  10: ['no', 'legitime', 'national law', 'testator', 'new york law', 'compulsory heirs'],
+  11: ['wife', 'one-half', 'p5,000,000', 'full-blood brothers', 'p1,000,000', 'nephew', 'representation', 'half-brothers', 'p500,000'],
+  12: ['yes', 'bound', 'respect', 'lease', 'assignee', 'steps into the shoes', 'actual knowledge'],
+  13: ['good faith', 'buyer luis', 'no action', 'rely', 'certificate of title'],
+  14: ['yes', 'solidarily liable', 'inside the vehicle', 'prevented', 'due diligence', 'article 2184'],
+  15: ['true', 'clause', 'choose more arbitrators', 'void', 'article 2045'],
+  16: ['true', 'renunciation', 'co-owner', 'dacion en pago', 'satisfaction of a debt'],
+  17: ['false', 'dispose', 'corpse', 'inter vivos', 'lifetime', 'no corpse'],
+  18: ['no', 'suit will not prosper', 'forum non conveniens', 'not citizens', 'national law'],
+  19: ['no', 'cannot be annulled', 'sterility', 'not a ground', 'article 45'],
+  20: ['no', 'not be dismissed', 'no opposition', 'submitted for resolution'],
+  21: ['no', 'different', 'adoptee who dies', 'petition should be dismissed', 'best interest of the adoptee'],
+  22: ['no', 'cannot compel', 'use his surname', 'may use', 'choice belongs to the child'],
+  23: ['no', 'not grant', 'sole parental authority', 'mother', 'article 176'],
+  24: ['no', 'not correct', 'due, demandable, and liquidated', 'p300,000.00', 'acceleration clause'],
+  25: ['yes', 'correct', 'accretion', 'adjoining banks', 'article 457', 'not in concept of an owner'],
+  26: ['reimbursement', 'taxes', 'quasi-contract', 'necessary expenses', 'preservation', 'article 546'],
+  27: ['yes', 'valid', 'pactum commissorium', 'not automatic appropriation', 'execute a document'],
+  28: ['no', 'different', 'automatic appropriation', 'prohibited', 'violative', 'pactum commissorium', 'void'],
+  29: ['yes', 'partition by sale', 'one-half or more', 'untenantable', 'thirty percent interest'],
+  30: ['dismissed', 'sale to alien', 'prohibited', 'flaw', 'cured', 'subsequently transferred to a citizen'],
+  31: ['new york law', 'change of name', 'not affect status', 'legal capacity'],
+  32: ['philippine law', 'not legal capacity', 'not status', 'philippine records'],
+  33: ['false', 'proves', 'capacitates the alien spouse to remarry', 'recognized by philippine courts'],
+  34: ['false', 'prohibit partition', 'not exceeding twenty years'],
+  35: ['both', 'a and b', 'breach of contract', 'lessor', 'necessary repairs', 'tort liability', 'engineer', 'architect', 'defect'],
+  36: ['none of the above', 'by chance', 'article 438', 'trespasser'],
+  37: ['invalid', 'public instrument', 'special power of attorney', 'during the lifetime'],
+  38: ['legacy given to b\'s child is invalid', 'legacy is void', 'article 823'],
+  39: ['guaranty', 'subsidiary', 'suretyship', 'solidary', 'primary obligor'],
+  40: ['comity theory', 'statute theory', 'legal reciprocity', 'domestic law'],
+  41: ['impugn', 'legitimacy', 'prescriptive period', 'proper party'],
+  42: ['conclusively presumed', 'legitimate daughter', 'right to support', 'succeed'],
+  43: ['yes', 'pendente lite', 'subsistence of their marriage', 'not yet been dissolved'],
+  44: ['yes', 'entitled to support', 'beyond age of majority', 'finished their education'],
+  45: ['habeas corpus', 'sole parental authority', 'mother', 'article 176'],
+  46: ['no', 'cannot demand', 'pari delicto', 'child trafficking'],
+  47: ['majorette', 'mother', 'sole parental authority', 'custody'],
+  48: ['co-owned', 'b and g', 'special co-ownership', 'article 147', 'ordinary rules on co-ownership'],
+  49: ['co-owned', 'article 147', 'retroactively', 'apartment', 'exclusively'],
+  50: ['yes', 'adopt', 'without consent', 'decree of legal separation'],
+  51: ['yes', 'adopt', 'lawful spouse gives her consent'],
+  52: ['no', 'cannot file', 'husband and wife', 'shall adopt jointly'],
+  53: ['both b and g', 'equal shares', 'special co-ownership', 'article 147'],
+  54: ['illegitimate', 'conceived and born outside', 'valid marriage', 'subsequent valid marriage'],
+  55: ['five children', 'surviving spouse', 'equally', 'one-half', 'one-fourth', 'one-twelfth'],
+  56: ['collated', 'one-half portion', 'advance on their respective inheritance'],
+  57: ['school', 'administrators', 'teachers', 'special parental authority', 'article 218'],
+  58: ['school', 'administrators', 'teachers', 'liable', 'supervision and custody'],
+  59: ['21 years old', 'quasi-delict', 'personally liable', 'no longer under parental authority'],
+  60: ['yes', 'right of way', 'shortest distance', 'least prejudice', 'indemnity'],
+  61: ['no one', 'liable', 'force majeure', 'fault of the person', 'article 2183'],
+  62: ['collection suit', 'a, b, and estate of c', 'pro rata', 'article 1816'],
+  148: ['no', 'birth determines personality', 'did not result in the death of a person'],
 };
 
 
-/**
- * Processes a text string into a set of significant, canonical words.
- * It normalizes text, expands contractions, preserves hyphenated words, 
- * removes stop words, and replaces synonyms.
- */
-const processTextToWordSet = (text: string): Set<string> => {
-  if (!text) return new Set();
-  
-  let processedText = text.toLowerCase();
+const checkAnswerCorrectness = (userAnswer: string, question: Question): boolean => {
+  // For multiple-choice questions, perform a simple string comparison.
+  if (question.Options && question.Options.length > 0) {
+    return userAnswer.trim().toLowerCase() === question.Answer.trim().toLowerCase();
+  }
 
-  // Expand common contractions to their full form for better stop-word filtering
-  processedText = processedText
-    .replace(/\b(it|he|she|that|what|who|where)'s\b/g, '$1 is')
-    .replace(/\b(i)'m\b/g, '$1 am')
-    .replace(/\b(we|you|they)'re\b/g, '$1 are')
-    .replace(/n't\b/g, ' not')
-    .replace(/'ll\b/g, ' will')
-    .replace(/'ve\b/g, ' have')
-    .replace(/'d\b/g, ' would');
+  // For essay questions, use the NLP keyword matching logic.
+  const keywords = ANSWER_KEYWORDS[question.No];
+  if (!keywords || keywords.length === 0) {
+    // If no keywords are defined for an essay, we cannot grade it locally.
+    // Defaulting to incorrect. A more complex implementation could use a different strategy.
+    return userAnswer.trim().toLowerCase() === question.Answer.trim().toLowerCase();
+  }
 
-  // Remove punctuation but keep intra-word hyphens. Replace underscores and other non-word chars with spaces.
-  processedText = processedText.replace(/[^\w\s-]|_/g, ' ').replace(/\s+/g, ' ').trim();
+  // Normalize the user's answer by converting to lowercase and removing punctuation.
+  const normalizedUserAnswer = userAnswer.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
 
-  const words = processedText.split(/\s+/);
-  
-  const significantWords = words
-    .filter(word => word && !STOP_WORDS.has(word))
-    .map(word => SYNONYM_MAP[word] || word); // Replace synonyms with canonical form
-  
-  return new Set(significantWords);
-};
-
-
-/**
- * Compares answers using a hybrid model of Jaccard Similarity and keyword matching.
- * This provides a more semantically aware evaluation.
- */
-const checkAnswerCorrectness = (question: Question, userAnswerText: string): boolean => {
-    // For multiple choice, we need an exact match of the selected option text.
-    if (question.Options && question.Options.length > 0) {
-      return userAnswerText.trim() === question.Answer.trim();
+  let matches = 0;
+  keywords.forEach(keyword => {
+    // Check if the normalized answer includes the keyword.
+    if (normalizedUserAnswer.includes(keyword.toLowerCase())) {
+      matches++;
     }
-  
-    // Initial guard for empty or very short raw answers.
-    if (!userAnswerText || userAnswerText.trim().length < 10) return false;
+  });
 
-    const userAnswerWords = processTextToWordSet(userAnswerText);
+  // To be marked correct, the user's answer must contain at least 60% of the essential keywords.
+  const requiredMatches = Math.ceil(keywords.length * 0.60);
 
-    // If the answer contains fewer than 2 meaningful words after processing,
-    // it's too insubstantial to be considered correct.
-    if (userAnswerWords.size < 2) {
-        return false;
-    }
-
-    const correctAnswerWords = processTextToWordSet(question.Answer);
-
-    if (correctAnswerWords.size === 0) return false;
-
-    // 1. Calculate Jaccard Similarity for overall semantic overlap.
-    const intersection = new Set([...userAnswerWords].filter(word => correctAnswerWords.has(word)));
-    const union = new Set([...userAnswerWords, ...correctAnswerWords]);
-    
-    if (union.size === 0) return false;
-    const jaccardSimilarity = intersection.size / union.size;
-
-    // 2. Calculate Keyword Match Score for core concept accuracy.
-    const keywords = (ANSWER_KEYWORDS[question.No] || []).map(k => SYNONYM_MAP[k] || k);
-    if (keywords.length === 0) {
-      // Fallback for questions without defined keywords.
-      return jaccardSimilarity > 0.25;
-    }
-    
-    const matchedKeywords = keywords.filter(keyword => userAnswerWords.has(keyword));
-    const keywordScore = matchedKeywords.length / keywords.length;
-
-    // 3. Combine scores using a weighted heuristic.
-    // An answer is correct if it has a strong keyword match and some similarity,
-    // or a moderate keyword match and higher similarity, or very high similarity alone.
-    const isCorrect = 
-      (keywordScore >= 0.6 && jaccardSimilarity > 0.15) || 
-      (keywordScore >= 0.4 && jaccardSimilarity > 0.25) || 
-      jaccardSimilarity > 0.4;
-    
-    return isCorrect;
+  return matches >= requiredMatches;
 };
 
 
@@ -179,20 +113,23 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
   const [explanations, setExplanations] = useState<{ [key: number]: string }>({});
   const [loadingExplanations, setLoadingExplanations] = useState<{ [key: number]: boolean }>({});
   const [explanationErrors, setExplanationErrors] = useState<{ [key: number]: string }>({});
-
-  const score = useMemo(() => {
-    return questions.reduce((acc, question) => {
-      const userAnswer = userAnswers[question.No] || '';
-      if (checkAnswerCorrectness(question, userAnswer)) {
-        return acc + 1;
-      }
-      return acc;
-    }, 0);
+  
+  const resultsData = useMemo(() => {
+    return questions.map(q => {
+      const userAnswer = userAnswers[q.No] || '';
+      const isCorrect = checkAnswerCorrectness(userAnswer, q);
+      return { questionNo: q.No, isCorrect };
+    });
   }, [questions, userAnswers]);
 
-  const scorePercentage = (score / questions.length) * 100;
-
-  const handleShowExplanation = useCallback(async (question: Question, userAnswer: string) => {
+  const { score, total } = useMemo(() => {
+    const correctCount = resultsData.filter(r => r.isCorrect).length;
+    return { score: correctCount, total: questions.length };
+  }, [resultsData, questions.length]);
+  
+  const scorePercentage = total > 0 ? (score / total) * 100 : 0;
+  
+   const handleShowExplanation = useCallback(async (question: Question, userAnswer: string) => {
     if (!userAnswer || userAnswer === 'No answer provided') return;
 
     setLoadingExplanations(prev => ({ ...prev, [question.No]: true }));
@@ -212,10 +149,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
     <div className="w-full flex-grow flex flex-col p-4 sm:p-6 md:p-8 animate-fade-in">
       <div className="text-center mb-6 flex-shrink-0">
         <h1 className="text-3xl sm:text-4xl font-bold">Exam Results</h1>
-        <p className="text-6xl sm:text-7xl font-black text-brand-primary mt-4 text-glow">
-          {score} / {questions.length}
+        <div className="h-20 flex items-center justify-center">
+            <p className="text-6xl sm:text-7xl font-black text-brand-primary mt-4 text-glow animate-fade-in">
+                {score} / {total}
+            </p>
+        </div>
+        <p className="text-xl sm:text-2xl text-slate-400">
+          {`(${scorePercentage.toFixed(0)}%)`}
         </p>
-        <p className="text-xl sm:text-2xl text-slate-400">({scorePercentage.toFixed(0)}%)</p>
       </div>
 
       <div className="glass-panel p-4 rounded-xl mb-6 flex-shrink-0">
@@ -242,7 +183,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
       <div className="flex-grow space-y-6 overflow-y-auto p-1">
         {questions.map((question, index) => {
            const userAnswer = userAnswers[question.No] || 'No answer provided';
-           const isCorrect = checkAnswerCorrectness(question, userAnswer);
+           const result = resultsData.find(r => r.questionNo === question.No);
+           const isCorrect = result ? result.isCorrect : false;
            
            const isMultipleChoice = question.Options && question.Options.length > 0;
            
@@ -253,6 +195,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
                     <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-brand-primary text-white font-bold">{index + 1}</span>
                     <h3 className="text-lg font-bold text-slate-100">{question.Question}</h3>
                   </div>
+                  
                   <span className={`flex-shrink-0 flex items-center gap-2 font-bold px-3 py-1 rounded-full text-sm ${isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
                     {isCorrect ? <CheckCircleIcon className="w-5 h-5" /> : <XCircleIcon className="w-5 h-5" />}
                     {isCorrect ? 'Correct' : 'Incorrect'}
