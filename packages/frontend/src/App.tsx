@@ -186,19 +186,19 @@ const App: React.FC = () => {
   
   // --- Question Bank Handlers ---
   const handleAddQuestion = async (questionData: Omit<Question, 'No'>) => {
-    await addQuestion(questionData);
+    await questionsAPI.addQuestion(questionData);
     await refreshData();
   };
   const handleUpdateQuestion = async (question: Question) => {
-    await updateQuestion(question);
+    await questionsAPI.updateQuestion(question);
     await refreshData();
   };
   const handleDeleteQuestion = async (questionNo: number) => {
-    await deleteQuestion(questionNo);
+    await questionsAPI.deleteQuestion(questionNo);
     await refreshData();
   };
   const handleImportQuestions = async (importedQuestions: Omit<Question, 'No'>[]) => {
-    await addMultipleQuestions(importedQuestions);
+    await questionsAPI.importQuestions(importedQuestions);
     await refreshData();
   };
 
