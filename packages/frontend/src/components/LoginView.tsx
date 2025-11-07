@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpenIcon } from './IconComponents';
 import Spinner from './Spinner';
-import { validateEmail } from '../services/backendService';
+import { authAPI } from '../services/api';
 
 // Declare global types for Google OAuth
 declare global {
