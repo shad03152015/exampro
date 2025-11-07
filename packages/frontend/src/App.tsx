@@ -132,10 +132,10 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setLoadingMessage('Fetching exam questions...');
-    
+
     try {
-      const allSubjectQuestions = await getQuestionsForSubject(selectedSubject);
-      
+      const allSubjectQuestions = await questionsAPI.getQuestions(selectedSubject);
+
       const shuffledQuestions = shuffleArray(allSubjectQuestions);
 
       const desiredCount = 20;
