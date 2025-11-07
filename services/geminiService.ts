@@ -15,7 +15,7 @@ const gradeEssayAnswerWithAI = async (userAnswer: string, correctAnswer: string,
     Respond in JSON format.`;
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",

@@ -6,14 +6,6 @@ interface BackgroundPickerProps {
   onChangeBackground: (background: string) => void;
 }
 
-const BACKGROUND_OPTIONS = [
-  { value: 'gradient', label: 'Animated Gradient', isGradient: true },
-  { value: '#000000', label: 'Black' },
-  { value: '#FFFFFF', label: 'White' },
-  { value: '#1e293b', label: 'Slate' },
-  { value: '#312e81', label: 'Indigo' },
-];
-
 const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ currentBackground, onChangeBackground }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -30,10 +22,9 @@ const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ currentBackground, 
     };
   }, []);
 
-  const handleSelect = (value: string) => {
-    onChangeBackground(value);
-    setIsOpen(false);
-  };
+  const isCustomColor = currentBackground !== 'gradient';
+  // Default to a dark slate color for the picker if the gradient is currently active
+  const colorPickerValue = isCustomColor ? currentBackground : '#0f172a';
 
   return (
     <div className="relative" ref={pickerRef}>
@@ -51,21 +42,28 @@ const BackgroundPicker: React.FC<BackgroundPickerProps> = ({ currentBackground, 
         <div className="glass-panel glass-panel-popover absolute right-0 mt-2 w-52 rounded-lg shadow-2xl shadow-black/30 z-20 p-4 animate-fade-in origin-top-right">
           <p className="text-sm font-semibold text-slate-200 mb-3">Select Background</p>
           <div className="space-y-2">
-            {BACKGROUND_OPTIONS.map(option => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full text-left text-sm p-2 rounded-md flex items-center gap-3 transition-colors hover:bg-slate-700/50 ${
-                  currentBackground === option.value ? 'bg-brand-primary/20' : ''
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full border border-slate-500 shrink-0 ${option.isGradient ? 'bg-animated-gradient' : ''}`}
-                  style={{ backgroundColor: option.isGradient ? undefined : option.value }}
-                ></div>
-                <span className="text-slate-200">{option.label}</span>
-              </button>
-            ))}
+            <button
+              onClick={() => onChangeBackground('gradient')}
+              className={`w-full text-left text-sm p-2 rounded-md flex items-center gap-3 transition-colors hover:bg-slate-700/50 ${
+                !isCustomColor ? 'bg-brand-primary/20' : ''
+              }`}
+            >
+              <div className="w-5 h-5 rounded-full border border-slate-500 shrink-0 bg-animated-gradient"></div>
+              <span className="text-slate-200">Animated Gradient</span>
+            </button>
+            
+            <div className={`w-full text-left text-sm p-2 rounded-md flex items-center gap-3 transition-colors ${ isCustomColor ? 'bg-brand-primary/20' : 'hover:bg-slate-700/50' }`}>
+                <label htmlFor="bg-color-picker" className="w-5 h-5 rounded-full border border-slate-500 shrink-0 cursor-pointer relative overflow-hidden" style={{ backgroundColor: colorPickerValue }}>
+                    <input
+                        id="bg-color-picker"
+                        type="color"
+                        value={colorPickerValue}
+                        onChange={(e) => onChangeBackground(e.target.value)}
+                        className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                </label>
+                <span className="text-slate-200">Custom Color</span>
+            </div>
           </div>
         </div>
       )}

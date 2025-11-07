@@ -185,7 +185,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
                     </div>
                     {result.status === 'graded' && result.feedback && (
                         <div className="mt-4 p-4 bg-slate-900/40 border border-slate-700 rounded-lg">
-                            <p className="font-semibold text-sm text-brand-primary mb-2">AI-Powered Feedback:</p>
+                            <p className="font-semibold text-sm text-brand-primary mb-2">ExamPractice-Powered Feedback:</p>
                             <p className="text-slate-300 text-sm break-words">{result.feedback}</p>
                         </div>
                     )}

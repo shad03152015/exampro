@@ -1,6 +1,6 @@
 {
   "name": "Exam Practice for 2026 Bar Examination",
-  "description": "An application that mimics an exam environment using questionnaires provided by a backend and offers AI-powered feedback for answers.",
+  "description": "An application that mimics an exam environment using questionnaires provided by a backend and offers ExamPractice-powered feedback for answers.",
   "requestFramePermissions": [
     "microphone"
   ]

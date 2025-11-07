@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpenIcon } from './IconComponents';
 import Spinner from './Spinner';
+import { validateEmail } from '../services/backendService';
 
 // Simple inline SVG for Google icon
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -31,18 +32,25 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         name: 'Bar Taker',
     };
 
-    const sessionKey = `examPractice2026_active_session_${mockUser.email}`;
-
-    if (sessionStorage.getItem(sessionKey)) {
-        setError('This account is already logged in another session. Please close the other session to continue.');
-        setIsLoading(false);
-        return;
-    }
-
     // Simulate network delay for Google Sign-In
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
+        const isAuthorized = await validateEmail(mockUser.email);
+        if (!isAuthorized) {
+            setError('This account is not authorized to use the application.');
+            setIsLoading(false);
+            return;
+        }
+
+        const sessionKey = `examPractice2026_active_session_${mockUser.email}`;
+
+        if (sessionStorage.getItem(sessionKey)) {
+            setError('This account is already logged in another session. Please close the other session to continue.');
+            setIsLoading(false);
+            return;
+        }
+
         onLoginSuccess(mockUser);
     } catch (e) {
         setError('Google Sign-In failed. Please try again.');

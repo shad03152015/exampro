@@ -23,6 +23,25 @@ const ALL_QUESTIONS: Question[] = [
 // The ALL_QUESTIONS array will be mutated to simulate a database.
 let questions: Question[] = [...ALL_QUESTIONS];
 
+// Simulate the list of valid accounts from the Google Sheet
+const VALID_ACCOUNTS = [
+    'student@google.com',
+    'shad03152015@gmail.com',
+    'admin@barexam.com',
+    'reviewer@lawschool.edu',
+];
+
+/**
+ * Simulates validating an email against a list of authorized accounts from a Google Sheet.
+ * In a real application, this would be a backend call to a secure endpoint.
+ * @param email The email address to validate.
+ * @returns A promise that resolves to true if the email is valid, false otherwise.
+ */
+export const validateEmail = async (email: string): Promise<boolean> => {
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay for the check
+    return VALID_ACCOUNTS.includes(email.toLowerCase());
+};
+
 /**
  * Simulates fetching the list of available subjects from a backend.
  */
