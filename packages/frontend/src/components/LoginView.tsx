@@ -111,26 +111,14 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               throw new Error(response.error_description || response.error);
             }
 
-            // Decode the ID token to get user information
-            const userInfo = decodeJWT(response.id_token);
+            // Authenticate with backend using the ID token
+            const authResponse = await authAPI.googleAuth(response.id_token);
 
-            const userData = {
-              email: userInfo.email,
-              name: userInfo.name || 'User',
-              picture: userInfo.picture,
-              googleId: userInfo.sub
-            };
-
-            // Validate email against authorized accounts
-            const isAuthorized = await validateEmail(userData.email);
-            if (!isAuthorized) {
-              setError('This account is not authorized to use the application.');
-              setIsLoading(false);
-              return;
-            }
+            // Store JWT token
+            localStorage.setItem('auth_token', authResponse.token);
 
             // Check for existing session
-            const sessionKey = `examPractice2026_active_session_${userData.email}`;
+            const sessionKey = `examPractice2026_active_session_${authResponse.user.email}`;
             if (sessionStorage.getItem(sessionKey)) {
               setError('This account is already logged in another session. Please close the other session to continue.');
               setIsLoading(false);
@@ -138,14 +126,11 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             }
 
             // Success - call the success callback
-            onLoginSuccess({
-              email: userData.email,
-              name: userData.name
-            });
+            onLoginSuccess(authResponse.user);
 
           } catch (error) {
             console.error('OAuth callback error:', error);
-            setError('Authentication failed. Please try again.');
+            setError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
             setIsLoading(false);
           }
         },
