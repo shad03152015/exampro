@@ -2,8 +2,7 @@ import express from 'express';
 import {
   addAuthorizedUser,
   removeAuthorizedUser,
-  getAuthorizedUsers,
-  getUsersCollection
+  getAuthorizedUsers
 } from '../services/mongodbService.js';
 
 const router = express.Router();
