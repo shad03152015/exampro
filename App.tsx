@@ -1,40 +1,25 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Question, ExamStatus, UserAnswers } from './types';
-import { getAvailableSubjects, getQuestionsForSubject } from './services/backendService';
-import { getSmartlyOrderedQuestions } from './services/geminiService';
+import { getAvailableSubjects, getQuestionsForSubject, getAllQuestions, addQuestion, updateQuestion, deleteQuestion } from './services/backendService';
 import ExamView from './components/ExamView';
 import ResultsView from './components/ResultsView';
-import { BookOpenIcon, SparklesIcon } from './components/IconComponents';
+import { BookOpenIcon, SparklesIcon, Cog6ToothIcon } from './components/IconComponents';
 import Spinner from './components/Spinner';
 import ThemePicker from './components/ThemePicker';
 import BackgroundPicker from './components/BackgroundPicker';
 import { hexToHsl, hexToRgb, isColorLight } from './utils/colorUtils';
 import LoginView from './components/LoginView';
 import UserMenu from './components/UserMenu';
+import QuestionBankView from './components/QuestionBankView';
 
 const SUBJECT_STORAGE_KEY = 'examBar2026LastSelectedSubject';
-const NUM_QUESTIONS_STORAGE_KEY = 'examBar2026NumQuestions';
 const THEME_STORAGE_KEY = 'examBar2026ThemeColor';
 const BACKGROUND_STORAGE_KEY = 'examBar2026BackgroundColor';
 const AUTH_STORAGE_KEY = 'examBar2026Authenticated';
+const USER_INFO_STORAGE_KEY = 'examBar2026UserInfo';
 
 const DEFAULT_THEME_COLOR = '#4f46e5'; // Default Indigo
 const DEFAULT_BACKGROUND = 'gradient';
-const DEFAULT_NUM_QUESTIONS = '10';
-
-/**
- * Shuffles an array using the Fisher-Yates algorithm for a more robust and uniform shuffle.
- * @param array The array to shuffle.
- * @returns A new shuffled array.
- */
-const shuffleArray = (array: Question[]): Question[] => {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-};
 
 const App: React.FC = () => {
   const [examStatus, setExamStatus] = useState<ExamStatus>(ExamStatus.Idle);
@@ -42,12 +27,11 @@ const App: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>(
     () => localStorage.getItem(SUBJECT_STORAGE_KEY) || ''
   );
-  const [numQuestions, setNumQuestions] = useState<string>(
-    () => localStorage.getItem(NUM_QUESTIONS_STORAGE_KEY) || DEFAULT_NUM_QUESTIONS
-  );
   
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [isQuestionBankOpen, setIsQuestionBankOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('');
@@ -57,6 +41,10 @@ const App: React.FC = () => {
   const [background, setBackground] = useState<string>(() => localStorage.getItem(BACKGROUND_STORAGE_KEY) || DEFAULT_BACKGROUND);
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!sessionStorage.getItem(AUTH_STORAGE_KEY));
+  const [user, setUser] = useState<{ email: string; name: string } | null>(() => {
+    const storedUser = sessionStorage.getItem(USER_INFO_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
   // Effect to apply the theme color globally via CSS variables
   useEffect(() => {
@@ -88,34 +76,37 @@ const App: React.FC = () => {
     localStorage.setItem(BACKGROUND_STORAGE_KEY, background);
   }, [background]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const fetchSubjects = async () => {
-      setIsLoading(true);
+  const refreshData = useCallback(async () => {
       try {
-        const subjects = await getAvailableSubjects();
+        const [subjects, questions] = await Promise.all([
+          getAvailableSubjects(),
+          getAllQuestions(),
+        ]);
+        
         setAvailableSubjects(subjects);
+        setAllQuestions(questions);
+
         if (!localStorage.getItem(SUBJECT_STORAGE_KEY) && subjects.length > 0) {
           setSelectedSubject(subjects[0]);
         } else if (!selectedSubject && subjects.length > 0) {
            setSelectedSubject(subjects[0]);
         }
       } catch (err) {
-        setError("Could not load exam subjects. Please try again later.");
+        setError("Could not load exam data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
-    };
-    fetchSubjects();
-  }, [isAuthenticated]);
+  }, [selectedSubject]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setIsLoading(true);
+    refreshData();
+  }, [isAuthenticated, refreshData]);
 
   useEffect(() => {
     localStorage.setItem(SUBJECT_STORAGE_KEY, selectedSubject);
   }, [selectedSubject]);
-
-  useEffect(() => {
-    localStorage.setItem(NUM_QUESTIONS_STORAGE_KEY, numQuestions);
-  }, [numQuestions]);
 
 
   const startExam = useCallback(async () => {
@@ -131,37 +122,10 @@ const App: React.FC = () => {
     try {
       const allSubjectQuestions = await getQuestionsForSubject(selectedSubject);
       
-      if (allSubjectQuestions.length === 0) {
-        throw new Error("No questions could be found for the selected subject.");
-      }
-      
-      const shuffled = shuffleArray(allSubjectQuestions);
-      const desiredCount = numQuestions === 'All' ? shuffled.length : parseInt(numQuestions, 10);
-      const questionSubset = shuffled.slice(0, Math.min(desiredCount, shuffled.length));
+      const desiredCount = 20;
+      const questionSubset = allSubjectQuestions.slice(0, Math.min(desiredCount, allSubjectQuestions.length));
 
-      if (questionSubset.length === 0) {
-        throw new Error("Not enough questions available for the selected number.");
-      }
-
-      let finalQuestions = questionSubset;
-
-      try {
-        setLoadingMessage('Optimizing question order with AI...');
-        const orderedIds = await getSmartlyOrderedQuestions(questionSubset);
-        
-        const questionMap = new Map(questionSubset.map(q => [q.No, q]));
-        const smartlyOrderedQuestions = orderedIds.map(id => questionMap.get(id)).filter(Boolean) as Question[];
-        
-        if (smartlyOrderedQuestions.length === questionSubset.length) {
-            finalQuestions = smartlyOrderedQuestions;
-        } else {
-             console.warn("AI ordering returned a mismatched number of questions. Falling back to random order.");
-        }
-      } catch (aiError) {
-        console.warn("AI ordering failed, falling back to random order:", aiError);
-      }
-
-      setActiveQuestions(finalQuestions);
+      setActiveQuestions(questionSubset);
       setUserAnswers({});
       setExamStatus(ExamStatus.Active);
 
@@ -171,7 +135,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [selectedSubject, numQuestions]);
+  }, [selectedSubject]);
 
   const finishExam = useCallback((finalAnswers: UserAnswers) => {
     setUserAnswers(finalAnswers);
@@ -183,19 +147,36 @@ const App: React.FC = () => {
       setExamStatus(ExamStatus.Idle);
   }, []);
 
-  const handleLoginSuccess = useCallback(() => {
+  const handleLoginSuccess = useCallback((loggedInUser: { email: string; name: string }) => {
     sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    sessionStorage.setItem(USER_INFO_STORAGE_KEY, JSON.stringify(loggedInUser));
     setIsAuthenticated(true);
+    setUser(loggedInUser);
   }, []);
 
   const handleLogout = useCallback(() => {
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(USER_INFO_STORAGE_KEY);
     setIsAuthenticated(false);
+    setUser(null);
     setExamStatus(ExamStatus.Idle);
     setUserAnswers({});
     setActiveQuestions([]);
   }, []);
-
+  
+  // --- Question Bank Handlers ---
+  const handleAddQuestion = async (questionData: Omit<Question, 'No'>) => {
+    await addQuestion(questionData);
+    await refreshData();
+  };
+  const handleUpdateQuestion = async (question: Question) => {
+    await updateQuestion(question);
+    await refreshData();
+  };
+  const handleDeleteQuestion = async (questionNo: number) => {
+    await deleteQuestion(questionNo);
+    await refreshData();
+  };
 
   const renderIdleContent = () => {
     if (isLoading && availableSubjects.length === 0) {
@@ -212,7 +193,7 @@ const App: React.FC = () => {
         <BookOpenIcon className="w-16 h-16 mx-auto text-brand-primary text-glow" />
         <h1 className="text-4xl md:text-5xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Bar 2026</h1>
         <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
-          Select your subject and number of questions to begin.
+          Select your subject to begin.
         </p>
         
         {error && (
@@ -221,40 +202,21 @@ const App: React.FC = () => {
             </div>
         )}
 
-        <div className="mb-8 w-full max-w-md mx-auto flex flex-col sm:flex-row gap-4">
-            <div className='flex-grow'>
-              <label htmlFor="subject-select" className="sr-only">
-                  Select Subject
-              </label>
-              <select
-                  id="subject-select"
-                  value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="select-embossed w-full text-center text-lg p-3 border rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition appearance-none"
-                  aria-label="Select a subject for the exam"
-              >
-                {availableSubjects.map(subject => (
-                  <option key={subject} value={subject}>{subject}</option>
-                ))}
-              </select>
-            </div>
-            <div className='sm:w-48'>
-               <label htmlFor="num-questions-select" className="sr-only">
-                  Number of Questions
-              </label>
-              <select
-                  id="num-questions-select"
-                  value={numQuestions}
-                  onChange={(e) => setNumQuestions(e.target.value)}
-                  className="select-embossed w-full text-center text-lg p-3 border rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition appearance-none"
-                  aria-label="Select number of questions"
-              >
-                <option value="5">5 Questions</option>
-                <option value="10">10 Questions</option>
-                <option value="20">20 Questions</option>
-                <option value="All">All Questions</option>
-              </select>
-            </div>
+        <div className="mb-8 w-full max-w-md mx-auto">
+            <label htmlFor="subject-select" className="sr-only">
+                Select Subject
+            </label>
+            <select
+                id="subject-select"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="select-embossed w-full text-center text-lg p-3 border rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition appearance-none"
+                aria-label="Select a subject for the exam"
+            >
+              {availableSubjects.map(subject => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
+            </select>
         </div>
         <button
           onClick={startExam}
@@ -263,6 +225,15 @@ const App: React.FC = () => {
         >
           {isLoading ? (loadingMessage || 'Loading...') : 'Start Exam'}
         </button>
+        <div className="mt-8">
+          <button
+            onClick={() => setIsQuestionBankOpen(true)}
+            className="flex items-center gap-2 mx-auto text-sm font-semibold text-slate-400 hover:text-brand-primary transition-colors"
+          >
+            <Cog6ToothIcon className="w-5 h-5" />
+            Manage Question Bank
+          </button>
+        </div>
       </div>
     );
   }
@@ -293,7 +264,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-2">
           <BackgroundPicker currentBackground={background} onChangeBackground={setBackground} />
           <ThemePicker currentTheme={themeColor} onChangeTheme={setThemeColor} />
-          {isAuthenticated && <UserMenu onLogout={handleLogout} />}
+          {isAuthenticated && user && <UserMenu user={user} onLogout={handleLogout} />}
         </div>
       </header>
       
@@ -306,6 +277,16 @@ const App: React.FC = () => {
           renderContent()
         )}
       </main>
+      
+      <QuestionBankView
+        isOpen={isQuestionBankOpen}
+        onClose={() => setIsQuestionBankOpen(false)}
+        questions={allQuestions}
+        subjects={availableSubjects.filter(s => s !== 'All Subjects')}
+        onAdd={handleAddQuestion}
+        onUpdate={handleUpdateQuestion}
+        onDelete={handleDeleteQuestion}
+      />
     </div>
   );
 };

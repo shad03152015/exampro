@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { Question } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -51,67 +51,5 @@ export const getAnswerExplanation = async (
   } catch (error) {
     console.error("Error generating explanation from Gemini API:", error);
     throw new Error("Failed to get explanation from AI service. Please try again later.");
-  }
-};
-
-/**
- * Uses a Gemini model to reorder questions for a better learning experience,
- * prioritizing topic diversity.
- * @param questions The array of questions to reorder.
- * @returns A promise that resolves to an array of question numbers in the new order.
- */
-export const getSmartlyOrderedQuestions = async (
-  questions: Question[]
-): Promise<number[]> => {
-  try {
-    const model = 'gemini-2.5-pro';
-
-    const questionsForPrompt = questions.map(q => ({
-      id: q.No,
-      question: q.Question
-    }));
-
-    const systemInstruction = `You are an expert curriculum designer and exam creator. Your task is to reorder a list of questions to create the most effective and logical study session. The goal is to maximize topic diversity by avoiding placing questions with very similar semantic content or keywords next to each other. Analyze the provided questions and return the optimized order.`;
-
-    const prompt = `Here is the list of questions to reorder:
-${JSON.stringify(questionsForPrompt, null, 2)}
-
-Please return a JSON object with a single key "orderedIds" which is an array of the question IDs in the new, optimized order. For example: { "orderedIds": [3, 1, 4, 2] }`;
-
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            orderedIds: {
-              type: Type.ARRAY,
-              items: { type: Type.INTEGER },
-            },
-          },
-          required: ['orderedIds'],
-        },
-      },
-    });
-
-    const jsonText = response.text.trim();
-    const result = JSON.parse(jsonText);
-
-    if (result.orderedIds && Array.isArray(result.orderedIds) && result.orderedIds.length === questions.length) {
-      const originalIds = new Set(questions.map(q => q.No));
-      const returnedIds = new Set(result.orderedIds);
-      if (originalIds.size === returnedIds.size && [...originalIds].every(id => returnedIds.has(id))) {
-        return result.orderedIds;
-      }
-    }
-    
-    throw new Error("AI-generated order was invalid or incomplete.");
-
-  } catch (error) {
-    console.error("Error getting smart order from Gemini API:", error);
-    throw new Error("Failed to get optimized order from AI service.");
   }
 };

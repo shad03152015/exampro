@@ -47,7 +47,7 @@ interface SpeechRecognition {
   start: () => void;
 }
 
-const TIME_PER_QUESTION_SECONDS = 120; // 2 minutes per question
+const EXAM_DURATION_SECONDS = 4800; // 1 hour and 20 minutes
 
 const formatTime = (seconds: number): string => {
     if (seconds < 0) seconds = 0;
@@ -59,7 +59,7 @@ const formatTime = (seconds: number): string => {
 const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
-  const [timeRemaining, setTimeRemaining] = useState(questions.length * TIME_PER_QUESTION_SECONDS);
+  const [timeRemaining, setTimeRemaining] = useState(EXAM_DURATION_SECONDS);
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
   const [confirmingSubmit, setConfirmingSubmit] = useState<boolean>(false);
   const [isFlaggedDropdownOpen, setIsFlaggedDropdownOpen] = useState<boolean>(false);
@@ -73,9 +73,6 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   // FIX: Changed NodeJS.Timeout to a browser-compatible type to resolve namespace error.
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const currentQuestion = useMemo(() => questions[currentIndex], [questions, currentIndex]);
-  const isLastQuestion = currentIndex === questions.length - 1;
-  
   const handleSubmit = useCallback(() => {
     onFinish(userAnswers);
   }, [onFinish, userAnswers]);
@@ -95,6 +92,78 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [handleSubmit]);
+  
+  const totalDuration = EXAM_DURATION_SECONDS;
+  const timeProgress = (timeRemaining / totalDuration) * 100;
+  
+  const progressBarColor = useMemo(() => {
+      if (timeProgress < 10) return 'bg-red-600 animate-pulse';
+      if (timeProgress < 25) return 'bg-amber-500';
+      return 'bg-brand-primary';
+  }, [timeProgress]);
+
+
+  // Handle Freeform (No Questions) Exam Mode
+  if (questions.length === 0) {
+    const handleFreeformAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setUserAnswers({ 0: e.target.value }); // Use a single key for the answer
+    };
+    const isTimeLow = timeRemaining <= 60;
+
+    return (
+      <div className="glass-panel w-full flex-grow p-4 sm:p-6 md:p-8 flex flex-col animate-slide-in-up">
+        <header className="mb-4 md:mb-6">
+          <div className="flex justify-between items-start">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-200 mt-2">Freeform Exam</h2>
+            <div className="flex flex-col items-end">
+              <div className={`flex items-center gap-3 rounded-xl px-4 py-2 transition-all duration-300 border shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10 backdrop-blur-sm ${
+                isTimeLow
+                ? 'bg-red-900/30 text-red-200 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse-warning'
+                : 'bg-slate-800/50 text-slate-200 border-slate-700 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.4)]'
+              }`}>
+                <HourglassIcon className="w-6 h-6 animate-spin-slow" />
+                <span className="text-xl font-bold tabular-nums tracking-wider">{formatTime(timeRemaining)}</span>
+              </div>
+              <div className="w-48 h-2 bg-slate-700/50 rounded-full mt-2 overflow-hidden border border-slate-600/50">
+                  <div
+                      className={`h-full rounded-full transition-[width] duration-500 ${progressBarColor}`}
+                      style={{ width: `${timeProgress}%` }}
+                      role="progressbar"
+                      aria-valuenow={timeRemaining}
+                      aria-valuemin={0}
+                      aria-valuemax={totalDuration}
+                      aria-label="Time remaining"
+                  ></div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-grow flex flex-col min-h-0 mt-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-slate-100 flex-shrink-0">General Essay</h2>
+          <p className="text-slate-400 mb-4">There are no specific questions for this session. Please write your response in the text area below.</p>
+          <div className="relative w-full flex-grow">
+            <textarea
+              value={userAnswers[0] || ''}
+              onChange={handleFreeformAnswerChange}
+              placeholder="Compose your answer..."
+              className="w-full h-full p-4 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500"
+            />
+          </div>
+        </main>
+        <footer className="mt-6 md:mt-8 flex justify-end items-center">
+          <button
+            onClick={handleSubmit}
+            className="px-8 py-3 bg-emerald-500 hover:opacity-80 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-[0_0_15px_rgba(16,185,129,0.5)] hover:shadow-[0_0_25px_rgba(16,185,129,0.7)]"
+          >
+            Submit Exam
+          </button>
+        </footer>
+      </div>
+    );
+  }
+
+  const currentQuestion = useMemo(() => questions[currentIndex], [questions, currentIndex]);
+  const isLastQuestion = currentIndex === questions.length - 1;
 
   // Speech Recognition Effect
   useEffect(() => {
@@ -211,14 +280,14 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   return (
     <div className="glass-panel w-full flex-grow p-4 sm:p-6 md:p-8 flex flex-col animate-slide-in-up">
       <header className="mb-4 md:mb-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
-          <div className='text-sm text-slate-400 flex flex-col sm:flex-row sm:items-center sm:gap-4'>
+        <div className="flex flex-col md:flex-row justify-between md:items-start mb-4 gap-4">
+          <div className='text-sm text-slate-400 flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-2'>
             <span className="whitespace-nowrap">Question {currentIndex + 1} of {questions.length}</span>
             <span className="font-semibold hidden sm:block text-slate-600">•</span>
             <span className="font-semibold text-slate-300">{currentQuestion.subject}</span>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4 self-end md:self-center">
-            <div className="relative" ref={flaggedDropdownRef}>
+          <div className="flex items-start gap-2 sm:gap-4 self-end md:self-center">
+            <div className="relative pt-2" ref={flaggedDropdownRef}>
               <button
                   onClick={() => setIsFlaggedDropdownOpen(prev => !prev)}
                   disabled={flaggedQuestions.size === 0}
@@ -247,13 +316,26 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
                   </div>
               )}
             </div>
-            <div className={`flex items-center gap-3 rounded-xl px-4 py-2 transition-all duration-300 border shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10 backdrop-blur-sm ${
-              isTimeLow
-              ? 'bg-red-900/30 text-red-200 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse-warning'
-              : 'bg-slate-800/50 text-slate-200 border-slate-700 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.4)]'
-            }`}>
-              <HourglassIcon className="w-5 h-5 animate-spin-slow" />
-              <span className="text-lg font-bold tabular-nums tracking-wider">{formatTime(timeRemaining)}</span>
+            <div className="flex flex-col items-end">
+                <div className={`flex items-center gap-3 rounded-xl px-4 py-2 transition-all duration-300 border shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10 backdrop-blur-sm ${
+                isTimeLow
+                ? 'bg-red-900/30 text-red-200 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse-warning'
+                : 'bg-slate-800/50 text-slate-200 border-slate-700 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.4)]'
+                }`}>
+                <HourglassIcon className="w-6 h-6 animate-spin-slow" />
+                <span className="text-xl font-bold tabular-nums tracking-wider">{formatTime(timeRemaining)}</span>
+                </div>
+                <div className="w-48 h-2 bg-slate-700/50 rounded-full mt-2 overflow-hidden border border-slate-600/50">
+                    <div
+                        className={`h-full rounded-full transition-[width] duration-500 ${progressBarColor}`}
+                        style={{ width: `${timeProgress}%` }}
+                        role="progressbar"
+                        aria-valuenow={timeRemaining}
+                        aria-valuemin={0}
+                        aria-valuemax={totalDuration}
+                        aria-label="Time remaining"
+                    ></div>
+                </div>
             </div>
           </div>
         </div>

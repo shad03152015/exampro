@@ -51,16 +51,38 @@ const SYNONYM_MAP: { [key: string]: string } = {
 
 // Define core keywords for each answer to prioritize key concepts.
 const ANSWER_KEYWORDS: { [key: number]: string[] } = {
-  1: ['15', 'days', 'publication', 'gazette', 'newspaper'],
-  2: ['presumed', 'know', 'law', 'excuses', 'compliance'],
-  3: ['police', 'power', 'eminent', 'domain', 'taxation'],
-  4: ['writ', 'habeas', 'corpus', 'produce', 'body', 'detaining'],
-  5: ['felony', 'penal', 'code', 'offense', 'special', 'law'],
-  6: ['justifying', 'accordance', 'law', 'self-defense', 'liability'],
-  7: ['jurisdiction', 'power', 'authority', 'tribunal', 'hear', 'decide'],
-  8: ['precautionary', 'principle', 'environment', 'damage', 'uncertain'],
-  9: ['security', 'tenure', 'dismissal', 'just', 'cause', 'due', 'process'],
-  10: ['lifeblood', 'doctrine', 'taxes', 'government', 'paralyzed'],
+  // Civil Law
+  1: ['consent', 'object', 'cause', 'requisites', 'contract'],
+  2: ['prescription', 'acquiring', 'ownership', 'losing', 'rights', 'lapse', 'time'],
+  3: ['void', 'voidable', 'inexistent', 'valid', 'annulled', 'vitiated', 'consent'],
+  // Criminal Law
+  4: ['attempted', 'frustrated', 'consummated', 'stages', 'felony', 'overt'],
+  5: ['conspiracy', 'agreement', 'felony', 'punishable', 'law', 'provides', 'penalty'],
+  6: ['dubio', 'pro', 'reo', 'doubt', 'accused', 'innocent', 'presumed'],
+  // Labor Law
+  7: ['labor-only', 'contracting', 'recruits', 'supplies', 'substantial', 'capital', 'principal'],
+  8: ['last-in', 'first-out', 'lifo', 'retrenchment', 'dismissed', 'hired', 'last'],
+  9: ['just', 'cause', 'dismissal', 'misconduct', 'disobedience', 'neglect', 'fraud'],
+  // Taxation Law
+  10: ['lifeblood', 'doctrine', 'taxes', 'government', 'paralyzed', 'imperious'],
+  11: ['tax', 'avoidance', 'evasion', 'legal', 'illegal', 'reduce', 'escape', 'fraud'],
+  12: ['police', 'power', 'eminent', 'domain', 'taxation', 'inherent'],
+  // Commercial Law
+  13: ['negotiable', 'instrument', 'written', 'contract', 'money', 'substitute', 'holder'],
+  14: ['piercing', 'corporate', 'veil', 'shareholders', 'liable', 'fraud', 'crime'],
+  15: ['negotiable', 'writing', 'signed', 'unconditional', 'promise', 'money', 'demand', 'bearer'],
+  // Remedial Law
+  16: ['jurisdiction', 'authority', 'court', 'hear', 'decide', 'summons', 'voluntary', 'appearance'],
+  17: ['cause', 'action', 'act', 'omission', 'violates', 'right', 'plaintiff'],
+  18: ['precautionary', 'principle', 'environment', 'damage', 'uncertain', 'threat'],
+  // Legal Ethics
+  19: ['attorney-client', 'privilege', 'confidentiality', 'communications', 'lawyer', 'legal', 'advice'],
+  20: ['conflict', 'interest', 'adverse', 'client', 'representation', 'limited', 'responsibilities'],
+  21: ['duty', 'court', 'administration', 'justice', 'officer', 'respectful', 'mislead'],
+  // Political Law
+  22: ['separation', 'powers', 'legislative', 'executive', 'judicial', 'branches', 'checks', 'balances'],
+  23: ['judicial', 'review', 'power', 'courts', 'constitution', 'unconstitutional', 'void'],
+  24: ['sovereignty', 'supreme', 'power', 'state', 'governed', 'internal', 'external']
 };
 
 

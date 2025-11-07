@@ -2,10 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserIcon, ArrowRightOnRectangleIcon } from './IconComponents';
 
 interface UserMenuProps {
+  user: {
+    name: string;
+    email: string;
+  };
   onLogout: () => void;
 }
 
-const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
+const UserMenu: React.FC<UserMenuProps> = ({ user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -34,13 +38,17 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout }) => {
       </button>
 
       {isOpen && (
-        <div className="glass-panel glass-panel-popover absolute right-0 mt-2 w-48 rounded-lg shadow-2xl shadow-black/30 z-20 p-2 animate-fade-in origin-top-right">
+        <div className="glass-panel glass-panel-popover absolute right-0 mt-2 w-64 rounded-lg shadow-2xl shadow-black/30 z-20 p-2 animate-fade-in origin-top-right">
+          <div className="px-3 py-2 border-b border-slate-700/80">
+            <p className="text-sm font-semibold text-slate-100 truncate">{user.name}</p>
+            <p className="text-xs text-slate-400 truncate">{user.email}</p>
+          </div>
           <button
             onClick={() => {
               onLogout();
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md text-slate-200 hover:bg-slate-700/50 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 mt-1 text-sm rounded-md text-slate-200 hover:bg-slate-700/50 transition-colors"
           >
             <ArrowRightOnRectangleIcon className="w-5 h-5" />
             <span>Logout</span>
