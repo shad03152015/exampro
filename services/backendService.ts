@@ -196,15 +196,35 @@ export const removeAuthorizedUser = async (email: string): Promise<boolean> => {
  */
 export const getAuthorizedUsers = async (): Promise<Array<{email: string, name: string}>> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-        return authorizedUsers.map(user => ({
+        const collection = await getUsersCollection();
+
+        // Find all active users
+        const users = await collection.find(
+            { is_active: true },
+            {
+                projection: {
+                    email: 1,
+                    name: 1,
+                    _id: 0
+                },
+                sort: { email: 1 }
+            }
+        ).toArray();
+
+        return users.map(user => ({
             email: user.email,
-            name: user.name
+            name: user.name || 'Unknown User'
         }));
     } catch (error) {
         console.error('Error fetching authorized users:', error);
-        return [];
+        // Fallback to hardcoded list if database is unavailable
+        return VALID_ACCOUNTS.map(email => ({
+            email,
+            name: 'Default User'
+        }));
     }
 };
 
