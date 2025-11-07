@@ -1,8 +1,8 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 
 // MongoDB connection configuration
-const MONGODB_URI = import.meta.env.VITE_MONGODB_URI || 'mongodb://localhost:27017/exampro';
-const DB_NAME = import.meta.env.VITE_MONGODB_DB_NAME || 'exampro';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/exampro';
+const DB_NAME = process.env.MONGODB_DB_NAME || 'exampro';
 
 // MongoDB client and database instances
 let client: MongoClient | null = null;
