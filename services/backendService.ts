@@ -7,6 +7,7 @@ import { COMMERCIAL_LAW_QUESTIONS } from '../data/commercial_law_questions';
 import { REMEDIAL_LAW_QUESTIONS } from '../data/remedial_law_questions';
 import { LEGAL_ETHICS_QUESTIONS } from '../data/legal_ethics_questions';
 import { POLITICAL_LAW_QUESTIONS } from '../data/political_law_questions';
+import { getUsersCollection, AuthorizedUser, initializeDefaultUsers } from './mongodbService';
 
 const ALL_QUESTIONS: Question[] = [
     ...CIVIL_LAW_QUESTIONS,
