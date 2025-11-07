@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Question, UserAnswers } from '../types';
+import { Question, UserAnswers } from 'exampro-shared';
 import { HourglassIcon, FlagIcon, ChevronDownIcon, EyeIcon, EyeSlashIcon, MicrophoneIcon } from './IconComponents';
 
 interface ExamViewProps {
