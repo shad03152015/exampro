@@ -1,4 +1,4 @@
-import { Question } from '../types';
+import { Question } from 'exampro-shared';
 
 export const LABOR_LAW_QUESTIONS: Question[] = [
     {
