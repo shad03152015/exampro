@@ -90,25 +90,34 @@ export const validateGoogleToken = async (token: string): Promise<{email: string
 };
 
 /**
- * Validates an email against the list of authorized accounts.
+ * Validates an email against the MongoDB authorized users collection.
  * Enhanced to work with Google OAuth users.
  * @param email The email address to validate.
  * @returns A promise that resolves to true if the email is valid, false otherwise.
  */
 export const validateEmail = async (email: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay for the check
+    try {
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-    // Check if email is in the original hardcoded list
-    if (VALID_ACCOUNTS.includes(email.toLowerCase())) {
-        return true;
+        // First check if email is in the original hardcoded list (fallback)
+        if (VALID_ACCOUNTS.includes(email.toLowerCase())) {
+            return true;
+        }
+
+        // Check if email exists in MongoDB authorized users collection
+        const collection = await getUsersCollection();
+        const user = await collection.findOne({
+            email: email.toLowerCase(),
+            is_active: true
+        });
+
+        return user !== null;
+    } catch (error) {
+        console.error('Email validation error:', error);
+        // Fallback to hardcoded list if database is unavailable
+        return VALID_ACCOUNTS.includes(email.toLowerCase());
     }
-
-    // Check if email is in the authorized users list
-    const userExists = authorizedUsers.some(user =>
-        user.email.toLowerCase() === email.toLowerCase()
-    );
-
-    return userExists;
 };
 
 /**
