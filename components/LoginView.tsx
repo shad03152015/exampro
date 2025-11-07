@@ -23,17 +23,26 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
+    
+    // In a real app, this would be the result of the OAuth flow.
+    // Here we just mock a successful login.
+    const mockUser = {
+        email: 'student@google.com',
+        name: 'Bar Taker',
+    };
+
+    const sessionKey = `examPractice2026_active_session_${mockUser.email}`;
+
+    if (sessionStorage.getItem(sessionKey)) {
+        setError('This account is already logged in another session. Please close the other session to continue.');
+        setIsLoading(false);
+        return;
+    }
 
     // Simulate network delay for Google Sign-In
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // In a real app, this would be the result of the OAuth flow.
-    // Here we just mock a successful login.
     try {
-        const mockUser = {
-            email: 'student@google.com',
-            name: 'Bar Taker',
-        };
         onLoginSuccess(mockUser);
     } catch (e) {
         setError('Google Sign-In failed. Please try again.');

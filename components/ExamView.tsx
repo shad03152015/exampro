@@ -374,9 +374,11 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
     <div className="glass-panel w-full flex-grow p-4 sm:p-6 md:p-8 flex flex-col animate-slide-in-up">
       <header className="mb-4 md:mb-6">
         <div className="flex flex-col md:flex-row justify-between md:items-start mb-4 gap-4">
-          <div className='text-sm text-slate-400 flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-2'>
-            <span className="whitespace-nowrap">Question {currentIndex + 1} of {questions.length}</span>
-            <span className="font-semibold hidden sm:block text-slate-600">•</span>
+          <div className='text-sm text-slate-400 flex items-center gap-4 mt-2'>
+            <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-brand-primary text-white font-bold text-lg">{currentIndex + 1}</span>
+                <span className="text-slate-400 font-medium">of {questions.length}</span>
+            </div>
             <span className="font-semibold text-slate-300">{currentQuestion.subject}</span>
           </div>
           <div className="flex items-start gap-2 sm:gap-4 self-end md:self-center">

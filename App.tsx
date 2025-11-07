@@ -166,11 +166,15 @@ const App: React.FC = () => {
   const handleLoginSuccess = useCallback((loggedInUser: { email: string; name: string }) => {
     sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
     sessionStorage.setItem(USER_INFO_STORAGE_KEY, JSON.stringify(loggedInUser));
+    sessionStorage.setItem(`examPractice2026_active_session_${loggedInUser.email}`, 'true');
     setIsAuthenticated(true);
     setUser(loggedInUser);
   }, []);
 
   const handleLogout = useCallback(() => {
+    if (user) {
+      sessionStorage.removeItem(`examPractice2026_active_session_${user.email}`);
+    }
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
     sessionStorage.removeItem(USER_INFO_STORAGE_KEY);
     setIsAuthenticated(false);
@@ -178,7 +182,7 @@ const App: React.FC = () => {
     setExamStatus(ExamStatus.Idle);
     setUserAnswers({});
     setActiveQuestions([]);
-  }, []);
+  }, [user]);
   
   // --- Question Bank Handlers ---
   const handleAddQuestion = async (questionData: Omit<Question, 'No'>) => {

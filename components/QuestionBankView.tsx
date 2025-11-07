@@ -228,7 +228,10 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
                         <div key={q.No} className="bg-slate-800/60 p-3 rounded-lg border border-slate-700/80">
                             <div className="flex justify-between items-start gap-4">
                                 <div>
-                                    <p className="font-semibold text-slate-200">{q.Question}</p>
+                                    <p className="font-semibold text-slate-200">
+                                      <span className="font-bold text-brand-primary mr-2">Q{q.No}:</span>
+                                      {q.Question}
+                                    </p>
                                     <p className="text-sm text-brand-primary/80 font-medium mt-1">{q.subject}</p>
                                 </div>
                                 <div className="flex-shrink-0 flex items-center gap-2">

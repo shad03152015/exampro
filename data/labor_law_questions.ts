@@ -605,7 +605,7 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "subject": "Labor Law",
         "No": 101,
         "Question": "Under current jurisprudence, when the dismissal is for a just or authorized cause but due process is not observed, the dismissal is said to be: (2012 Bar Question) a. Void for denial of due process; hence, the employee should be reinstated; b. Void for lack of due process, the employee should be paid full backwages; c. Valid, for the dismissal is with just/authorized cause, but the employer shall be liable for nominal damages; d. Valid, even if due process is not observed, hence reinstatement should not be ordered.",
-        "Answer": "c. Valid, for the dismissal is with just/authorized cause, but the employer shall be liable for nominal damages."
+        "Answer": "c. Valid, for the dismissal is with just/authorized cause, but the employer shall be liable for nominal damages;"
     },
     {
         "subject": "Labor Law",
@@ -751,82 +751,82 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "Question": "Explain the twin notice and hearing rule. (2016)",
         "Answer": "The twin notice and hearing rule requires a directive that the employee be given the opportunity to submit a written explanation on why he should not be dismissed within a reasonable period of time. The grounds for terminating an employee... must be a detailed narration of the facts and circumstances that will support the charge against the employee. Then the employer must inform the employee in writing of its decision stating the facts, the analysis of the evidence and statement of witnesses and the law or policy which led to the decision."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 126,
         "Question": "Did the Biyahe sa Langit Transport comply with the prior procedural requirements for dismissal?",
-        "Answer": "No. The notice given by Biyahe sa Langit Transport did not give Pedro a minimum period.",
-        "page_range": "156"
+        "Answer": "No. The notice given by Biyahe sa Langit Transport did not give Pedro a minimum period."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 127,
         "Question": "If an employer's dismissal of an employee is declared illegal for failure to observe due process, what is the consequence? (2011 BAR) (A) defective; the dismissal process has to be repeated. (B) an abuse of employer's discretion, rendering the dismissal void. (C) ineffectual; the dismissal will be held in abeyance. (D) legal and valid but the employer will be liable for indemnity.",
-        "Answer": "(D) legal and valid but the employer will be liable for indemnity.",
-        "page_range": "156"
+        "Answer": "(D) legal and valid but the employer will be liable for indemnity."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 128,
         "Question": "Juan Santos is a regular employee of Far East Development Company... dismissed... The employer argued that even if there was no due process in the dismissal... it was found that the dismissal was for a just cause and therefore Santos was not entitled to reinstatement. (1) Is the employer's contention valid? Explain.",
-        "Answer": "The employer's contention is valid. The dismissal is declared legal if based on a just or authorized cause. In such a case, the employer's failure to give notice and hearing does not amount to illegal dismissal, but merely to a violation of procedural due process, for which the employee is entitled to nominal damages.",
-        "page_range": "156-157"
+        "Answer": "The employer's contention is valid. The dismissal is declared legal if based on a just or authorized cause. In such a case, the employer's failure to give notice and hearing does not amount to illegal dismissal, but merely to a violation of procedural due process, for which the employee is entitled to nominal damages."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 129,
         "Question": "Santos, on the other hand, challenged the proceedings before the labor arbiter on the ground that no hearing was conducted and that the decision was reached only on the basis of position papers submitted and hence, in violation of due process. (2) Is the contention of Santos correct? Explain.",
-        "Answer": "The contention of Santos is not correct. The Labor Arbiter is not prevented from deciding a case on the basis of the position papers alone. The Labor Arbiter may, but is not required to, conduct a formal hearing for the reception or presentation of evidence.",
-        "page_range": "157"
+        "Answer": "The contention of Santos is not correct. The Labor Arbiter is not prevented from deciding a case on the basis of the position papers alone. The Labor Arbiter may, but is not required to, conduct a formal hearing for the reception or presentation of evidence."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 130,
         "Question": "What are the twin-requirements of due process which the employer must observe in terminating or dismissing an employee? Explain. ",
-        "Answer": "The twin requirements of due process are **notice and hearing** to be given to the worker. There is likewise a two-notice requirement rule, with the first notice pertaining to specific causes or grounds for termination and a directive to submit a written explanation within a reasonable period. The second notice pertains to notice of termination.",
-        "page_range": "158"
+        "Answer": "The twin requirements of due process are **notice and hearing** to be given to the worker. There is likewise a two-notice requirement rule, with the first notice pertaining to specific causes or grounds for termination and a directive to submit a written explanation within a reasonable period. The second notice pertains to notice of termination."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 131,
         "Question": "Which of the following is not a procedural due process requirement in the termination of an employee for just cause? (2012 Bar Question) a. A written notice to the employee specifying the grounds for his termination; b. A written notice to the DOLE at least thirty (30) days before the effectivity of the termination; c. An opportunity to be heard; d. A written notice of termination.",
-        "Answer": "b. A written notice to the DOLE at least thirty (30) days before the effectivity of the termination.",
-        "page_range": "161"
+        "Answer": "b. A written notice to the DOLE at least thirty (30) days before the effectivity of the termination."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 132,
         "Question": "May Mandarin Company recover the backwages and other benefits paid to Juanito pursuant to the decision of the Labor Arbiter in view of the reversal by the NLRC? Rule, with reasons.  (2017 Bar Question)",
-        "Answer": "Mandarin cannot recover the backwages and other benefits paid to Juanito. The decision of the Labor Arbiter insofar as the reinstatement aspect is concerned, is immediately executory pending appeal. It is the obligation of Mandarin to immediately admit Juanito back to work or reinstate him in the payroll.",
-        "page_range": "161-162"
+        "Answer": "Mandarin cannot recover the backwages and other benefits paid to Juanito. The decision of the Labor Arbiter insofar as the reinstatement aspect is concerned, is immediately executory pending appeal. It is the obligation of Mandarin to immediately admit Juanito back to work or reinstate him in the payroll."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 133,
         "Question": "When is separation pay granted in lieu of reinstatement? (2011 BAR)",
-        "Answer": "Separation pay is granted in lieu of reinstatement when: (a) reinstatement is no longer feasible due to the closure or cessation of operation of the establishment or undertaking of the employer not founded on serious business losses; or (b) the former position of the employee no longer exists at the time of reinstatement for reasons not attributable to the fault of the employer; or (c) the existence of strained relations between the employer and the illegally dismissed employee, provided the matter is raised before the Labor Arbiter.",
-        "page_range": "162"
+        "Answer": "Separation pay is granted in lieu of reinstatement when: (a) reinstatement is no longer feasible due to the closure or cessation of operation of the establishment or undertaking of the employer not founded on serious business losses; or (b) the former position of the employee no longer exists at the time of reinstatement for reasons not attributable to the fault of the employer; or (c) the existence of strained relations between the employer and the illegally dismissed employee, provided the matter is raised before the Labor Arbiter."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 134,
         "Question": "What is meant by payroll reinstatement and when does it apply? (4%) (2005 Bar Question)",
-        "Answer": "Payroll reinstatement is a form of reinstatement which an employer may opt to exercise in lieu of an actual reinstatement. Here, the illegally dismissed employee is to receive his basic pay without the obligation of rendering any service to the employer. This occurs when a Labor Arbiter decides that an employee was illegally dismissed and as a consequence awards reinstatement, pursuant to Article 279 of the Labor Code, which award is immediately executory even pending appeal.",
-        "page_range": "163"
+        "Answer": "Payroll reinstatement is a form of reinstatement which an employer may opt to exercise in lieu of an actual reinstatement. Here, the illegally dismissed employee is to receive his basic pay without the obligation of rendering any service to the employer. This occurs when a Labor Arbiter decides that an employee was illegally dismissed and as a consequence awards reinstatement, pursuant to Article 279 of the Labor Code, which award is immediately executory even pending appeal."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 135,
         "Question": "Suppose Juan Dukha proved during the hearing that he was robbed of his collections and, consequently, the Labor Arbiter decided in his favor. In the meantime, the Ladies Garments Company appealed to the National Labor Relations Commission (NLRC). Pending appeal, what rights are available to Juan relative to the favorable decision of the Labor Arbiter? Explain. (1995 Bar Question)",
-        "Answer": "Juan can ask for immediate reinstatement pending resolution of the appeal filed by the company with the NLRC. At the option of his employer, he may be admitted back to work or merely reinstated in the payroll.",
-        "page_range": "164"
+        "Answer": "Juan can ask for immediate reinstatement pending resolution of the appeal filed by the company with the NLRC. At the option of his employer, he may be admitted back to work or merely reinstated in the payroll."
     },
+    // FIX: Remove 'page_range' property
     {
         "subject": "Labor Law",
         "No": 136,
         "Question": "If the Labor Arbiter finds that the dismissal was illegal for being without just cause, what relief/s may be granted to Juan?",
-        "Answer": "Juan is entitled to these reliefs, namely reinstatement without loss of seniority and other privileges and full backwages, inclusive of allowances, and to other benefits or their monetary equivalent computed from the time his compensation was withheld from him up to the time of his actual reinstatement.",
-        "page_range": "166"
+        "Answer": "Juan is entitled to these reliefs, namely reinstatement without loss of seniority and other privileges and full backwages, inclusive of allowances, and to other benefits or their monetary equivalent computed from the time his compensation was withheld from him up to the time of his actual reinstatement."
     },
     {
         "subject": "Labor Law",
@@ -976,7 +976,7 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "subject": "Labor Law",
         "No": 161,
         "Question": "Jennifer, a receptionist at Company X, is covered by the SSS. She was pregnant with her fourth child when she slipped in the bathroom of her home and had a miscarriage. Meanwhile, Company X neglected to remit the required contributions to the SSS. Jennifer claims maternity leave benefits and sickness benefits. Which of these two may she claim? (2012 Bar Question) a. None of them; b. Either one of them; c. Only maternity leave benefits; d. Only sickness benefits.",
-        "Answer": "c. Only maternity leave benefits."
+        "Answer": "c. Only maternity leave benefits;"
     },
     {
         "subject": "Labor Law",
@@ -1036,7 +1036,7 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "subject": "Labor Law",
         "No": 171,
         "Question": "Which of the following injuries/death is not compensable? (2012 Bar Question) a. Injuries sustained by a technician while at a field trip initiated by the Union and sponsored by the Company; b. Injuries received by a janitor at a Union election meeting; c. Death of a bank teller because of a bank robbery; d. Death of a professor who was hit by a van on his way home from work.",
-        "Answer": "b. Injuries received by a janitor at a Union election meeting."
+        "Answer": "b. Injuries received by a janitor at a Union election meeting;"
     },
     {
         "subject": "Labor Law",
@@ -1066,7 +1066,7 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "subject": "Labor Law",
         "No": 176,
         "Question": "It is defined as any union or association of employees which exists in whole or in part for the purpose of collective bargaining with employers concerning terms and conditions of employment. (2012 Bar Question) a. Bargaining representative; b. Labor organization; c. Legitimate labor organization; d. Federation.",
-        "Answer": "b. Labor organization."
+        "Answer": "b. Labor organization;"
     },
     {
         "subject": "Labor Law",
@@ -1084,7 +1084,7 @@ export const LABOR_LAW_QUESTIONS: Question[] = [
         "subject": "Labor Law",
         "No": 179,
         "Question": "Which of the following groups does not enjoy the right to self-organization? (2014 Bar Question) (A) those who work in a non-profit charitable institution (B) those who are paid on a piece-rate basis (C) those who work in a corporation with less than 10 employees (D) those who work as legal secretaries",
-        "Answer": "(D) those who work as legal secretaries."
+        "Answer": "(D) those who work as legal secretaries"
     },
     {
         "subject": "Labor Law",
