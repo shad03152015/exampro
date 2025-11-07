@@ -1,7 +1,7 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Question } from '../types';
 
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+const ai = new GoogleGenAI({apiKey: import.meta.env.VITE_GEMINI_API_KEY || ''});
 
 const gradeEssayAnswerWithAI = async (userAnswer: string, correctAnswer: string, questionText: string): Promise<{ isCorrect: boolean; feedback: string; }> => {
   try {
