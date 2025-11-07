@@ -1,4 +1,4 @@
-import { Question } from '../shared/src/index';
+import { Question } from 'exampro-shared';
 
 export const LABOR_LAW_QUESTIONS: Question[] = [
     {

@@ -1,4 +1,4 @@
-import { Question } from '../shared/src/index';
+import { Question } from 'exampro-shared';
 
 export const POLITICAL_LAW_QUESTIONS: Question[] = [
     {

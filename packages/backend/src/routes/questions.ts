@@ -1,5 +1,5 @@
 import express from 'express';
-import { Question } from '../shared/src/index';
+import { Question } from 'exampro-shared';
 import {
   CIVIL_LAW_QUESTIONS,
   CRIMINAL_LAW_QUESTIONS,
