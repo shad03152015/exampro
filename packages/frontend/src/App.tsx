@@ -171,7 +171,13 @@ const App: React.FC = () => {
     setUser(loggedInUser);
   }, []);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
     if (user) {
       sessionStorage.removeItem(`examPractice2026_active_session_${user.email}`);
     }
