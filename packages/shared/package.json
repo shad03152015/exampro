@@ -12,12 +12,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
   },
   "devDependencies": {
     "typescript": "~5.8.2"
