@@ -1,4 +1,4 @@
-import { Question } from 'exampro-shared';
+import { Question } from '../shared/src/index';
 
 export const LEGAL_ETHICS_QUESTIONS: Question[] = [
  {
