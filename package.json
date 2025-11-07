@@ -1,23 +1,18 @@
 {
-  "name": "exam-practice-for-2026-bar-examination",
+  "name": "exampro-monorepo",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@google/genai": "^1.28.0",
-    "mongodb": "^7.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=exampro-frontend",
+    "dev:backend": "npm run dev --workspace=exampro-backend",
+    "build": "npm run build --workspace=exampro-frontend && npm run build --workspace=exampro-backend",
+    "install:all": "npm install",
+    "clean": "npm run clean --workspace=exampro-frontend && npm run clean --workspace=exampro-backend && npm run clean --workspace=exampro-shared"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "concurrently": "^8.2.2"
   }
 }
