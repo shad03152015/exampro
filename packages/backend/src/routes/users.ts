@@ -10,7 +10,7 @@ const router = express.Router();
 /**
  * Get all authorized users
  */
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const users = await getAuthorizedUsers();
 
