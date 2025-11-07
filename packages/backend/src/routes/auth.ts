@@ -36,6 +36,13 @@ router.post('/google', async (req, res) => {
 
     const { email, name, sub: googleId } = payload;
 
+    if (!email) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token: missing email'
+      });
+    }
+
     // Validate email against authorized users
     const isAuthorized = await validateEmail(email);
     if (!isAuthorized) {
