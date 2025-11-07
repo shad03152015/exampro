@@ -1,7 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpenIcon } from './IconComponents';
 import Spinner from './Spinner';
 import { validateEmail } from '../services/backendService';
+
+// Declare global types for Google OAuth
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        oauth2: {
+          initCodeClient: (config: any) => {
+            requestCode: () => void;
+          };
+        };
+      };
+    };
+  }
+}
 
 // Simple inline SVG for Google icon
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -20,41 +35,140 @@ interface LoginViewProps {
 const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
 
-  const handleLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    // In a real app, this would be the result of the OAuth flow.
-    // Here we just mock a successful login.
-    const mockUser = {
-        email: 'student@google.com',
-        name: 'Bar Taker',
+  // Load Google OAuth script on component mount
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      return new Promise((resolve, reject) => {
+        // Check if script is already loaded
+        if (window.google) {
+          resolve(window.google);
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve(window.google);
+        script.onerror = () => reject(new Error('Failed to load Google OAuth script'));
+        document.head.appendChild(script);
+      });
     };
 
-    // Simulate network delay for Google Sign-In
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    loadGoogleScript()
+      .then(() => {
+        setIsGoogleScriptLoaded(true);
+      })
+      .catch(() => {
+        setError('Google authentication unavailable. Please refresh the page and try again.');
+      });
+  }, []);
+
+  // Decode JWT token to get user information
+  const decodeJWT = (token: string) => {
     try {
-        const isAuthorized = await validateEmail(mockUser.email);
-        if (!isAuthorized) {
-            setError('This account is not authorized to use the application.');
-            setIsLoading(false);
-            return;
-        }
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      throw new Error('Invalid authentication token');
+    }
+  };
 
-        const sessionKey = `examPractice2026_active_session_${mockUser.email}`;
+  const handleLogin = async () => {
+    if (!isGoogleScriptLoaded) {
+      setError('Google authentication is still loading. Please wait a moment and try again.');
+      return;
+    }
 
-        if (sessionStorage.getItem(sessionKey)) {
-            setError('This account is already logged in another session. Please close the other session to continue.');
-            setIsLoading(false);
-            return;
-        }
+    setIsLoading(true);
+    setError(null);
 
-        onLoginSuccess(mockUser);
-    } catch (e) {
-        setError('Google Sign-In failed. Please try again.');
+    try {
+      // Check if CLIENT_ID is configured
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId || clientId === 'your-google-client-id-here') {
+        setError('Google OAuth is not properly configured. Please contact the administrator.');
         setIsLoading(false);
+        return;
+      }
+
+      // Initialize Google OAuth
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'email profile',
+        callback: async (response: any) => {
+          try {
+            if (response.error) {
+              throw new Error(response.error_description || response.error);
+            }
+
+            // Decode the ID token to get user information
+            const userInfo = decodeJWT(response.id_token);
+
+            const userData = {
+              email: userInfo.email,
+              name: userInfo.name || 'User',
+              picture: userInfo.picture,
+              googleId: userInfo.sub
+            };
+
+            // Validate email against authorized accounts
+            const isAuthorized = await validateEmail(userData.email);
+            if (!isAuthorized) {
+              setError('This account is not authorized to use the application.');
+              setIsLoading(false);
+              return;
+            }
+
+            // Check for existing session
+            const sessionKey = `examPractice2026_active_session_${userData.email}`;
+            if (sessionStorage.getItem(sessionKey)) {
+              setError('This account is already logged in another session. Please close the other session to continue.');
+              setIsLoading(false);
+              return;
+            }
+
+            // Success - call the success callback
+            onLoginSuccess({
+              email: userData.email,
+              name: userData.name
+            });
+
+          } catch (error) {
+            console.error('OAuth callback error:', error);
+            setError('Authentication failed. Please try again.');
+            setIsLoading(false);
+          }
+        },
+        error_callback: (error: any) => {
+          console.error('OAuth error:', error);
+          if (error.error === 'popup_closed_by_user') {
+            setError('Login cancelled. Please try again.');
+          } else if (error.error === 'access_denied') {
+            setError('Access denied. Please allow access to your Google account.');
+          } else {
+            setError('Authentication failed. Please try again.');
+          }
+          setIsLoading(false);
+        }
+      });
+
+      // Request OAuth token
+      tokenClient.requestToken();
+
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Google Sign-In failed. Please try again.');
+      setIsLoading(false);
     }
   };
 
