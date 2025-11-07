@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Question } from 'exampro-shared';
+import { Question } from '../shared/src/index';
 import { XMarkIcon, PlusCircleIcon, PencilIcon, TrashIcon, ArrowUturnLeftIcon, ArrowUpTrayIcon } from './IconComponents';
 import Spinner from './Spinner';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Question, UserAnswers } from 'exampro-shared';
+import { Question, UserAnswers } from '../shared/src/index';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon } from './IconComponents';
 import { checkAnswerCorrectness } from '../services/geminiService';
 import Spinner from './Spinner';
