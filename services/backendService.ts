@@ -124,32 +124,36 @@ export const validateEmail = async (email: string): Promise<boolean> => {
  * Adds a new authorized user to the system.
  * @param email The user's email address.
  * @param name The user's name.
- * @param googleId Optional Google ID for OAuth users.
  * @returns A promise that resolves to true if successful, false otherwise.
  */
-export const addAuthorizedUser = async (email: string, name?: string, googleId?: string): Promise<boolean> => {
+export const addAuthorizedUser = async (email: string, name?: string): Promise<boolean> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
+
+        const collection = await getUsersCollection();
 
         // Check if user already exists
-        const existingUser = authorizedUsers.find(user =>
-            user.email.toLowerCase() === email.toLowerCase()
-        );
+        const existingUser = await collection.findOne({
+            email: email.toLowerCase()
+        });
 
         if (existingUser) {
             return false; // User already exists
         }
 
-        // Add new user
-        const newUser = {
+        // Insert new user
+        const newUser: Omit<AuthorizedUser, '_id'> = {
             email: email.toLowerCase(),
             name: name || 'New User',
-            googleId,
-            createdAt: new Date()
+            google_id: undefined, // Will be populated when user logs in with Google
+            is_active: true,
+            created_at: new Date(),
+            updated_at: new Date()
         };
 
-        authorizedUsers.push(newUser);
-        return true;
+        const result = await collection.insertOne(newUser);
+        return result.acknowledged;
     } catch (error) {
         console.error('Error adding authorized user:', error);
         return false;
