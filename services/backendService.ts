@@ -7,6 +7,7 @@ import { COMMERCIAL_LAW_QUESTIONS } from '../data/commercial_law_questions';
 import { REMEDIAL_LAW_QUESTIONS } from '../data/remedial_law_questions';
 import { LEGAL_ETHICS_QUESTIONS } from '../data/legal_ethics_questions';
 import { POLITICAL_LAW_QUESTIONS } from '../data/political_law_questions';
+import { getUsersCollection, AuthorizedUser, initializeDefaultUsers } from './mongodbService';
 
 const ALL_QUESTIONS: Question[] = [
     ...CIVIL_LAW_QUESTIONS,
@@ -31,13 +32,14 @@ const VALID_ACCOUNTS = [
     'reviewer@lawschool.edu',
 ];
 
-// In-memory storage for authorized users (simulating a database)
-let authorizedUsers: Array<{email: string, name: string, googleId?: string, createdAt: Date}> = [
-    { email: 'student@google.com', name: 'Student User', createdAt: new Date() },
-    { email: 'shad03152015@gmail.com', name: 'Shad User', createdAt: new Date() },
-    { email: 'admin@barexam.com', name: 'Admin User', createdAt: new Date() },
-    { email: 'reviewer@lawschool.edu', name: 'Reviewer User', createdAt: new Date() },
-];
+// Initialize default users when the service loads
+const ensureDatabaseInitialized = async (): Promise<void> => {
+  try {
+    await initializeDefaultUsers();
+  } catch (error) {
+    console.warn('Failed to initialize database users, falling back to default validation:', error);
+  }
+};
 
 /**
  * Validates a Google ID token and extracts user information.
@@ -88,57 +90,70 @@ export const validateGoogleToken = async (token: string): Promise<{email: string
 };
 
 /**
- * Validates an email against the list of authorized accounts.
+ * Validates an email against the MongoDB authorized users collection.
  * Enhanced to work with Google OAuth users.
  * @param email The email address to validate.
  * @returns A promise that resolves to true if the email is valid, false otherwise.
  */
 export const validateEmail = async (email: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay for the check
+    try {
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-    // Check if email is in the original hardcoded list
-    if (VALID_ACCOUNTS.includes(email.toLowerCase())) {
-        return true;
+        // First check if email is in the original hardcoded list (fallback)
+        if (VALID_ACCOUNTS.includes(email.toLowerCase())) {
+            return true;
+        }
+
+        // Check if email exists in MongoDB authorized users collection
+        const collection = await getUsersCollection();
+        const user = await collection.findOne({
+            email: email.toLowerCase(),
+            is_active: true
+        });
+
+        return user !== null;
+    } catch (error) {
+        console.error('Email validation error:', error);
+        // Fallback to hardcoded list if database is unavailable
+        return VALID_ACCOUNTS.includes(email.toLowerCase());
     }
-
-    // Check if email is in the authorized users list
-    const userExists = authorizedUsers.some(user =>
-        user.email.toLowerCase() === email.toLowerCase()
-    );
-
-    return userExists;
 };
 
 /**
  * Adds a new authorized user to the system.
  * @param email The user's email address.
  * @param name The user's name.
- * @param googleId Optional Google ID for OAuth users.
  * @returns A promise that resolves to true if successful, false otherwise.
  */
-export const addAuthorizedUser = async (email: string, name?: string, googleId?: string): Promise<boolean> => {
+export const addAuthorizedUser = async (email: string, name?: string): Promise<boolean> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
+
+        const collection = await getUsersCollection();
 
         // Check if user already exists
-        const existingUser = authorizedUsers.find(user =>
-            user.email.toLowerCase() === email.toLowerCase()
-        );
+        const existingUser = await collection.findOne({
+            email: email.toLowerCase()
+        });
 
         if (existingUser) {
             return false; // User already exists
         }
 
-        // Add new user
-        const newUser = {
+        // Insert new user
+        const newUser: Omit<AuthorizedUser, '_id'> = {
             email: email.toLowerCase(),
             name: name || 'New User',
-            googleId,
-            createdAt: new Date()
+            google_id: undefined, // Will be populated when user logs in with Google
+            is_active: true,
+            created_at: new Date(),
+            updated_at: new Date()
         };
 
-        authorizedUsers.push(newUser);
-        return true;
+        const result = await collection.insertOne(newUser);
+        return result.acknowledged;
     } catch (error) {
         console.error('Error adding authorized user:', error);
         return false;
@@ -152,14 +167,23 @@ export const addAuthorizedUser = async (email: string, name?: string, googleId?:
  */
 export const removeAuthorizedUser = async (email: string): Promise<boolean> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-        const initialLength = authorizedUsers.length;
-        authorizedUsers = authorizedUsers.filter(user =>
-            user.email.toLowerCase() !== email.toLowerCase()
+        const collection = await getUsersCollection();
+
+        // Deactivate user instead of deleting (soft delete)
+        const result = await collection.updateOne(
+            { email: email.toLowerCase() },
+            {
+                $set: {
+                    is_active: false,
+                    updated_at: new Date()
+                }
+            }
         );
 
-        return authorizedUsers.length < initialLength;
+        return result.modifiedCount > 0;
     } catch (error) {
         console.error('Error removing authorized user:', error);
         return false;
@@ -172,15 +196,35 @@ export const removeAuthorizedUser = async (email: string): Promise<boolean> => {
  */
 export const getAuthorizedUsers = async (): Promise<Array<{email: string, name: string}>> => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+        // Ensure database is initialized
+        await ensureDatabaseInitialized();
 
-        return authorizedUsers.map(user => ({
+        const collection = await getUsersCollection();
+
+        // Find all active users
+        const users = await collection.find(
+            { is_active: true },
+            {
+                projection: {
+                    email: 1,
+                    name: 1,
+                    _id: 0
+                },
+                sort: { email: 1 }
+            }
+        ).toArray();
+
+        return users.map(user => ({
             email: user.email,
-            name: user.name
+            name: user.name || 'Unknown User'
         }));
     } catch (error) {
         console.error('Error fetching authorized users:', error);
-        return [];
+        // Fallback to hardcoded list if database is unavailable
+        return VALID_ACCOUNTS.map(email => ({
+            email,
+            name: 'Default User'
+        }));
     }
 };
 
