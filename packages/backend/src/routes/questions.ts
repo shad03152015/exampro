@@ -28,7 +28,7 @@ let questions: Question[] = [
 /**
  * Get all available subjects
  */
-router.get('/subjects', (req, res) => {
+router.get('/subjects', (_req, res) => {
   try {
     const subjects = new Set(questions.map(q => q.subject));
     const sortedSubjects = Array.from(subjects).sort();
