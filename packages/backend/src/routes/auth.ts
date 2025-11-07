@@ -140,7 +140,7 @@ router.post('/refresh', async (req, res) => {
 /**
  * Logout functionality (client-side token removal)
  */
-router.post('/logout', (req, res) => {
+router.post('/logout', (_req, res) => {
   res.json({
     success: true,
     message: 'Logout successful'
