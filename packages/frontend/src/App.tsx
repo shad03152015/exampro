@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Question, ExamStatus, UserAnswers } from './types';
-import { getAvailableSubjects, getQuestionsForSubject, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, addMultipleQuestions } from './services/backendService';
+import { Question, ExamStatus, UserAnswers } from 'exampro-shared';
+import { questionsAPI } from './services/api';
 import ExamView from './components/ExamView';
 import ResultsView from './components/ResultsView';
 import { BookOpenIcon, SparklesIcon, Cog6ToothIcon } from './components/IconComponents';
