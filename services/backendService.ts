@@ -1,14 +1,12 @@
 import { Question } from '../types';
-import {
-    CIVIL_LAW_QUESTIONS,
-    CRIMINAL_LAW_QUESTIONS,
-    LABOR_LAW_QUESTIONS,
-    TAXATION_LAW_QUESTIONS,
-    COMMERCIAL_LAW_QUESTIONS,
-    REMEDIAL_LAW_QUESTIONS,
-    LEGAL_ETHICS_QUESTIONS,
-    POLITICAL_LAW_QUESTIONS
-} from '../data/questions';
+import { CIVIL_LAW_QUESTIONS } from '../data/civil_law_questions';
+import { CRIMINAL_LAW_QUESTIONS } from '../data/criminal_law_questions';
+import { LABOR_LAW_QUESTIONS } from '../data/labor_law_questions';
+import { TAXATION_LAW_QUESTIONS } from '../data/taxation_law_questions';
+import { COMMERCIAL_LAW_QUESTIONS } from '../data/commercial_law_questions';
+import { REMEDIAL_LAW_QUESTIONS } from '../data/remedial_law_questions';
+import { LEGAL_ETHICS_QUESTIONS } from '../data/legal_ethics_questions';
+import { POLITICAL_LAW_QUESTIONS } from '../data/political_law_questions';
 
 const ALL_QUESTIONS: Question[] = [
     ...CIVIL_LAW_QUESTIONS,
@@ -68,6 +66,25 @@ export const addQuestion = async (newQuestionData: Omit<Question, 'No'>): Promis
     questions.push(newQuestion);
     return newQuestion;
 }
+
+/**
+ * Simulates adding multiple questions to the database from an import.
+ */
+export const addMultipleQuestions = async (newQuestionsData: Omit<Question, 'No'>[]): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    let maxId = questions.reduce((max, q) => Math.max(q.No, max), 0);
+    
+    const newQuestions: Question[] = newQuestionsData.map((qData) => {
+        maxId++;
+        return {
+            ...qData,
+            No: maxId,
+        };
+    });
+
+    questions.push(...newQuestions);
+}
+
 
 /**
  * Simulates updating an existing question in the database.

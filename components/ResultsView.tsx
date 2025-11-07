@@ -52,37 +52,39 @@ const SYNONYM_MAP: { [key: string]: string } = {
 // Define core keywords for each answer to prioritize key concepts.
 const ANSWER_KEYWORDS: { [key: number]: string[] } = {
   // Civil Law
-  1: ['consent', 'object', 'cause', 'requisites', 'contract'],
-  2: ['prescription', 'acquiring', 'ownership', 'losing', 'rights', 'lapse', 'time'],
-  3: ['void', 'voidable', 'inexistent', 'valid', 'annulled', 'vitiated', 'consent'],
+  1: ['true', 'foreign', 'law', 'pleaded', 'proved', 'presumption', 'same', 'domestic'],
+  2: ['true', 'legitimation', 'died', 'before', 'marriage', 'benefit', 'descendants'],
+  3: ['died', 'same', 'time', 'no', 'transmission', 'rights', 'representation', 'survivorship', 'presumed', 'died', 'ahead', 'vested'],
+  4: ['void', 'marriage', 'ceremony', 'formal', 'requisite', 'absence', 'presence', 'officer'],
+  5: ['foreign', 'element'],
   // Criminal Law
-  4: ['attempted', 'frustrated', 'consummated', 'stages', 'felony', 'overt'],
-  5: ['conspiracy', 'agreement', 'felony', 'punishable', 'law', 'provides', 'penalty'],
-  6: ['dubio', 'pro', 'reo', 'doubt', 'accused', 'innocent', 'presumed'],
+  6: ['attempted', 'frustrated', 'consummated', 'stages', 'felony', 'overt', 'acts'],
+  7: ['conspiracy', 'agreement', 'felony', 'punishable', 'law', 'provides', 'penalty'],
+  8: ['dubio', 'pro', 'reo', 'doubt', 'accused', 'innocent', 'presumed'],
   // Labor Law
-  7: ['labor-only', 'contracting', 'recruits', 'supplies', 'substantial', 'capital', 'principal'],
-  8: ['last-in', 'first-out', 'lifo', 'retrenchment', 'dismissed', 'hired', 'last'],
-  9: ['just', 'cause', 'dismissal', 'misconduct', 'disobedience', 'neglect', 'fraud'],
+  9: ['labor-only', 'contracting', 'recruits', 'supplies', 'substantial', 'capital', 'principal'],
+  10: ['last-in', 'first-out', 'lifo', 'retrenchment', 'dismissed', 'hired', 'last'],
+  11: ['just', 'cause', 'dismissal', 'misconduct', 'disobedience', 'neglect', 'fraud'],
   // Taxation Law
-  10: ['lifeblood', 'doctrine', 'taxes', 'government', 'paralyzed', 'imperious'],
-  11: ['tax', 'avoidance', 'evasion', 'legal', 'illegal', 'reduce', 'escape', 'fraud'],
-  12: ['police', 'power', 'eminent', 'domain', 'taxation', 'inherent'],
+  12: ['lifeblood', 'doctrine', 'taxes', 'government', 'paralyzed', 'imperious'],
+  13: ['tax', 'avoidance', 'evasion', 'legal', 'illegal', 'reduce', 'escape', 'fraud'],
+  14: ['police', 'power', 'eminent', 'domain', 'taxation', 'inherent'],
   // Commercial Law
-  13: ['negotiable', 'instrument', 'written', 'contract', 'money', 'substitute', 'holder'],
-  14: ['piercing', 'corporate', 'veil', 'shareholders', 'liable', 'fraud', 'crime'],
-  15: ['negotiable', 'writing', 'signed', 'unconditional', 'promise', 'money', 'demand', 'bearer'],
+  15: ['negotiable', 'instrument', 'written', 'contract', 'money', 'substitute', 'holder'],
+  16: ['piercing', 'corporate', 'veil', 'shareholders', 'liable', 'fraud', 'crime', 'disregards', 'personality'],
+  17: ['negotiable', 'writing', 'signed', 'unconditional', 'promise', 'money', 'demand', 'bearer'],
   // Remedial Law
-  16: ['jurisdiction', 'authority', 'court', 'hear', 'decide', 'summons', 'voluntary', 'appearance'],
-  17: ['cause', 'action', 'act', 'omission', 'violates', 'right', 'plaintiff'],
-  18: ['precautionary', 'principle', 'environment', 'damage', 'uncertain', 'threat'],
+  18: ['jurisdiction', 'authority', 'court', 'hear', 'decide', 'summons', 'voluntary', 'appearance'],
+  19: ['cause', 'action', 'act', 'omission', 'violates', 'right', 'plaintiff'],
+  20: ['precautionary', 'principle', 'environment', 'damage', 'uncertain', 'threat'],
   // Legal Ethics
-  19: ['attorney-client', 'privilege', 'confidentiality', 'communications', 'lawyer', 'legal', 'advice'],
-  20: ['conflict', 'interest', 'adverse', 'client', 'representation', 'limited', 'responsibilities'],
-  21: ['duty', 'court', 'administration', 'justice', 'officer', 'respectful', 'mislead'],
+  21: ['practicing', 'law', 'suspension', 'prohibited', 'attorney-in-fact', 'knowledge'],
+  22: ['represent', 'klyde', 'boni', 'disqualification', 'state', 'witness', 'prosecutor'],
+  23: ['allegiance', 'constitution', 'obey', 'laws', 'falsehood', 'groundless', 'delay'],
   // Political Law
-  22: ['separation', 'powers', 'legislative', 'executive', 'judicial', 'branches', 'checks', 'balances'],
-  23: ['judicial', 'review', 'power', 'courts', 'constitution', 'unconstitutional', 'void'],
-  24: ['sovereignty', 'supreme', 'power', 'state', 'governed', 'internal', 'external']
+  24: ['separation', 'powers', 'legislative', 'executive', 'judicial', 'branches', 'checks', 'balances'],
+  25: ['judicial', 'review', 'power', 'courts', 'constitution', 'unconstitutional', 'void'],
+  26: ['sovereignty', 'supreme', 'power', 'state', 'governed', 'internal', 'external']
 };
 
 
@@ -124,6 +126,11 @@ const processTextToWordSet = (text: string): Set<string> => {
  * This provides a more semantically aware evaluation.
  */
 const checkAnswerCorrectness = (question: Question, userAnswerText: string): boolean => {
+    // For multiple choice, we need an exact match of the selected option text.
+    if (question.Options && question.Options.length > 0) {
+      return userAnswerText.trim() === question.Answer.trim();
+    }
+  
     // Initial guard for empty or very short raw answers.
     if (!userAnswerText || userAnswerText.trim().length < 10) return false;
 
@@ -173,17 +180,21 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
   const [loadingExplanations, setLoadingExplanations] = useState<{ [key: number]: boolean }>({});
   const [explanationErrors, setExplanationErrors] = useState<{ [key: number]: string }>({});
 
+  const sortedQuestions = useMemo(() => {
+    return [...questions].sort((a, b) => a.No - b.No);
+  }, [questions]);
+
   const score = useMemo(() => {
-    return questions.reduce((acc, question) => {
+    return sortedQuestions.reduce((acc, question) => {
       const userAnswer = userAnswers[question.No] || '';
       if (checkAnswerCorrectness(question, userAnswer)) {
         return acc + 1;
       }
       return acc;
     }, 0);
-  }, [questions, userAnswers]);
+  }, [sortedQuestions, userAnswers]);
 
-  const scorePercentage = (score / questions.length) * 100;
+  const scorePercentage = (score / sortedQuestions.length) * 100;
 
   const handleShowExplanation = useCallback(async (question: Question, userAnswer: string) => {
     if (!userAnswer || userAnswer === 'No answer provided') return;
@@ -206,13 +217,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
       <div className="text-center mb-8 flex-shrink-0">
         <h1 className="text-3xl sm:text-4xl font-bold">Exam Results</h1>
         <p className="text-6xl sm:text-7xl font-black text-brand-primary mt-4 text-glow">
-          {score} / {questions.length}
+          {score} / {sortedQuestions.length}
         </p>
         <p className="text-xl sm:text-2xl text-slate-400">({scorePercentage.toFixed(0)}%)</p>
       </div>
 
       <div className="flex-grow space-y-6 overflow-y-auto p-1">
-        {questions.map((question) => {
+        {sortedQuestions.map((question, index) => {
            const userAnswer = userAnswers[question.No] || 'No answer provided';
            const isCorrect = checkAnswerCorrectness(question, userAnswer);
            
@@ -229,7 +240,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ questions, userAnswers, onRes
            return (
             <div key={question.No} className={`glass-panel p-4 md:p-6 rounded-2xl border transition-all duration-300 shadow-glow-primary ${cardBorderStyle}`}>
               <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
-                  <h3 className="text-lg font-semibold mb-2 flex-1">{question.No}. {question.Question}</h3>
+                  <h3 className="text-lg font-semibold mb-2 flex-1">{index + 1}. {question.Question}</h3>
                   <span className={`flex-shrink-0 flex items-center gap-2 font-bold text-lg ${statusTextStyle}`}>
                     {isCorrect ? <CheckCircleIcon className="w-6 h-6" /> : <XCircleIcon className="w-6 h-6" />}
                     {isCorrect ? 'Correct' : 'Incorrect'}

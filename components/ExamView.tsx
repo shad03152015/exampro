@@ -47,6 +47,7 @@ interface SpeechRecognition {
   start: () => void;
 }
 
+const AUTOSAVE_KEY = 'examPractice2026InProgressAnswers';
 const EXAM_DURATION_SECONDS = 4800; // 1 hour and 20 minutes
 
 const formatTime = (seconds: number): string => {
@@ -70,12 +71,50 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const flaggedDropdownRef = useRef<HTMLDivElement>(null);
-  // FIX: Changed NodeJS.Timeout to a browser-compatible type to resolve namespace error.
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const answersRef = useRef(userAnswers); // Ref for auto-save
 
   const handleSubmit = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY); // Clean up on final submission
     onFinish(userAnswers);
   }, [onFinish, userAnswers]);
+
+  // Keep answers ref updated for the interval closure
+  useEffect(() => {
+    answersRef.current = userAnswers;
+  }, [userAnswers]);
+
+  // Load answers on mount and set up auto-save interval
+  useEffect(() => {
+    // Load any previously auto-saved answers
+    try {
+      const savedAnswersRaw = localStorage.getItem(AUTOSAVE_KEY);
+      if (savedAnswersRaw) {
+        const savedAnswers = JSON.parse(savedAnswersRaw);
+        // Basic validation: ensure it's an object and not null
+        if (typeof savedAnswers === 'object' && savedAnswers !== null) {
+          setUserAnswers(savedAnswers);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load auto-saved answers:", error);
+      // If parsing fails, the data is likely corrupt, so remove it.
+      localStorage.removeItem(AUTOSAVE_KEY);
+    }
+
+    // Set up auto-save timer
+    const autoSaveTimer = setInterval(() => {
+      // Use the ref to access the latest state without creating a dependency
+      if (Object.keys(answersRef.current).length > 0) {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(answersRef.current));
+      }
+    }, 60000); // Auto-save every 1 minute
+
+    // Clean up interval on component unmount
+    return () => {
+      clearInterval(autoSaveTimer);
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   // Timer countdown effect
    useEffect(() => {
@@ -245,13 +284,13 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
     setUserAnswers(prev => ({ ...prev, [currentQuestion.No]: e.target.value }));
   };
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     if (currentIndex < questions.length - 1) setCurrentIndex(prev => prev + 1);
-  };
+  }, [currentIndex, questions.length]);
 
-  const goToPrevious = () => {
+  const goToPrevious = useCallback(() => {
     if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
-  };
+  }, [currentIndex]);
   
   const goToQuestion = (questionNo: number) => {
     const questionIndex = questions.findIndex(q => q.No === questionNo);
@@ -261,22 +300,72 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
     }
   };
 
-  const toggleFlag = () => {
+  const toggleFlag = useCallback(() => {
     setFlaggedQuestions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(currentQuestion.No)) newSet.delete(currentQuestion.No);
       else newSet.add(currentQuestion.No);
       return newSet;
     });
-  };
+  }, [currentQuestion.No]);
 
-  const handleSubmitClick = () => {
+  const handleSubmitClick = useCallback(() => {
     if (flaggedQuestions.size > 0 && !confirmingSubmit) {
       setConfirmingSubmit(true);
       return;
     }
     handleSubmit();
-  };
+  }, [flaggedQuestions.size, confirmingSubmit, handleSubmit]);
+
+  // Keyboard shortcuts effect
+  useEffect(() => {
+    // Do not enable shortcuts for freeform exam mode
+    if (questions.length === 0) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      // Ignore shortcuts if user is typing in a text area or input field.
+      const isTyping = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT';
+
+      // Allow Ctrl+Enter for submission even when typing.
+      if (event.ctrlKey && event.key === 'Enter') {
+        event.preventDefault(); // Prevent default action (e.g., new line).
+        if (isLastQuestion) {
+          handleSubmitClick();
+        }
+        return;
+      }
+
+      // If typing, ignore other single-key or arrow key shortcuts.
+      if (isTyping) {
+        return;
+      }
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          goToPrevious();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          goToNext();
+          break;
+        case 'f':
+        case 'F':
+          event.preventDefault();
+          toggleFlag();
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [questions.length, isLastQuestion, goToPrevious, goToNext, toggleFlag, handleSubmitClick]);
 
   const isTimeLow = timeRemaining <= 60;
   const isCurrentQuestionFlagged = flaggedQuestions.has(currentQuestion.No);

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Question } from '../types';
-import { XMarkIcon, PlusCircleIcon, PencilIcon, TrashIcon, ArrowUturnLeftIcon } from './IconComponents';
+import { XMarkIcon, PlusCircleIcon, PencilIcon, TrashIcon, ArrowUturnLeftIcon, ArrowUpTrayIcon } from './IconComponents';
 import Spinner from './Spinner';
 
 interface QuestionBankViewProps {
@@ -11,6 +11,7 @@ interface QuestionBankViewProps {
   onAdd: (question: Omit<Question, 'No'>) => Promise<void>;
   onUpdate: (question: Question) => Promise<void>;
   onDelete: (questionNo: number) => Promise<void>;
+  onImport: (questions: Omit<Question, 'No'>[]) => Promise<void>;
 }
 
 const emptyFormData = {
@@ -27,6 +28,7 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
   onAdd,
   onUpdate,
   onDelete,
+  onImport,
 }) => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -35,6 +37,8 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
   
   const [searchTerm, setSearchTerm] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('All Subjects');
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,6 +47,7 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
       setEditingQuestion(null);
       setSearchTerm('');
       setSubjectFilter('All Subjects');
+      setNotification(null);
     }
   }, [isOpen]);
 
@@ -74,7 +79,8 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     setFormData({
         subject: question.subject,
         Question: question.Question,
-        Answer: question.Answer
+        Answer: question.Answer,
+        Options: question.Options
     });
     setIsFormVisible(true);
   };
@@ -90,6 +96,47 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
     setEditingQuestion(null);
   };
 
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  }
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const text = e.target?.result;
+            if (typeof text !== 'string') {
+              throw new Error("File content is not readable text.");
+            }
+            const data = JSON.parse(text);
+
+            if (!Array.isArray(data) || data.some(item => !item.subject || !item.Question || !item.Answer)) {
+              throw new Error("Invalid JSON structure. Must be an array of questions with subject, Question, and Answer fields.");
+            }
+            
+            setIsSubmitting(true);
+            await onImport(data);
+            showNotification('success', `Successfully imported ${data.length} questions.`);
+
+        } catch (error) {
+            console.error("Failed to import questions:", error);
+            showNotification('error', error instanceof Error ? error.message : "An unknown error occurred during import.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    reader.onerror = () => {
+        showNotification('error', 'Failed to read the selected file.');
+    };
+    reader.readAsText(file);
+    // Reset file input value to allow re-uploading the same file
+    event.target.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -101,9 +148,10 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
       }
       setIsFormVisible(false);
       setEditingQuestion(null);
+      showNotification('success', `Question successfully ${editingQuestion ? 'updated' : 'added'}.`);
     } catch (error) {
       console.error("Failed to save question", error);
-      // Here you could set an error state to show the user
+      showNotification('error', 'Failed to save question.');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +170,11 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
         </header>
 
         <div className="flex-grow p-4 flex flex-col min-h-0">
+          {notification && (
+              <div className={`p-3 mb-4 rounded-lg border text-center animate-fade-in ${notification.type === 'success' ? 'bg-brand-secondary/20 border-brand-secondary/50 text-emerald-300' : 'bg-red-900/40 border-red-500/50 text-red-300'}`}>
+                  {notification.message}
+              </div>
+          )}
           {isFormVisible ? (
              <div className="animate-fade-in">
                 <h3 className="text-xl font-semibold mb-4 text-brand-primary">{editingQuestion ? 'Edit Question' : 'Add New Question'}</h3>
@@ -155,7 +208,11 @@ const QuestionBankView: React.FC<QuestionBankViewProps> = ({
             <>
                 <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
                     <button onClick={handleAddNewClick} className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-primary/20 text-brand-primary border border-brand-primary/50 hover:bg-brand-primary/30 font-semibold rounded-lg transition">
-                        <PlusCircleIcon className="w-5 h-5" /> Add New Question
+                        <PlusCircleIcon className="w-5 h-5" /> Add New
+                    </button>
+                     <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-700/50 border border-slate-600 hover:bg-slate-700 font-semibold rounded-lg transition text-slate-300">
+                      <ArrowUpTrayIcon className="w-5 h-5" /> Import from JSON
                     </button>
                     <div className="flex-grow flex flex-col sm:flex-row gap-4">
                        <input type="text" placeholder="Search questions..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="select-embossed flex-grow p-2 border rounded-md focus:ring-2 focus:ring-brand-primary transition" />

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Question, ExamStatus, UserAnswers } from './types';
-import { getAvailableSubjects, getQuestionsForSubject, getAllQuestions, addQuestion, updateQuestion, deleteQuestion } from './services/backendService';
+import { getAvailableSubjects, getQuestionsForSubject, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, addMultipleQuestions } from './services/backendService';
 import ExamView from './components/ExamView';
 import ResultsView from './components/ResultsView';
 import { BookOpenIcon, SparklesIcon, Cog6ToothIcon } from './components/IconComponents';
@@ -193,6 +193,10 @@ const App: React.FC = () => {
     await deleteQuestion(questionNo);
     await refreshData();
   };
+  const handleImportQuestions = async (importedQuestions: Omit<Question, 'No'>[]) => {
+    await addMultipleQuestions(importedQuestions);
+    await refreshData();
+  };
 
   const renderIdleContent = () => {
     if (isLoading && availableSubjects.length === 0) {
@@ -302,6 +306,7 @@ const App: React.FC = () => {
         onAdd={handleAddQuestion}
         onUpdate={handleUpdateQuestion}
         onDelete={handleDeleteQuestion}
+        onImport={handleImportQuestions}
       />
     </div>
   );
