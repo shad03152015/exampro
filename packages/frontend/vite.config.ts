@@ -17,8 +17,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      'exampro-shared': path.resolve(__dirname, '../shared/src')
+      '@': path.resolve(__dirname, 'src')
     }
+  },
+  optimizeDeps: {
+    include: ['exampro-shared']
   }
 })
