@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Question, ExamStatus, UserAnswers } from '../shared/src/index';
+import { Question, ExamStatus, UserAnswers } from 'exampro-shared';
 import { questionsAPI, authAPI } from './services/api';
 import ExamView from './components/ExamView';
 import ResultsView from './components/ResultsView';
