@@ -32,13 +32,14 @@ const VALID_ACCOUNTS = [
     'reviewer@lawschool.edu',
 ];
 
-// In-memory storage for authorized users (simulating a database)
-let authorizedUsers: Array<{email: string, name: string, googleId?: string, createdAt: Date}> = [
-    { email: 'student@google.com', name: 'Student User', createdAt: new Date() },
-    { email: 'shad03152015@gmail.com', name: 'Shad User', createdAt: new Date() },
-    { email: 'admin@barexam.com', name: 'Admin User', createdAt: new Date() },
-    { email: 'reviewer@lawschool.edu', name: 'Reviewer User', createdAt: new Date() },
-];
+// Initialize default users when the service loads
+const ensureDatabaseInitialized = async (): Promise<void> => {
+  try {
+    await initializeDefaultUsers();
+  } catch (error) {
+    console.warn('Failed to initialize database users, falling back to default validation:', error);
+  }
+};
 
 /**
  * Validates a Google ID token and extracts user information.
