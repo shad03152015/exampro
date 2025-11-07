@@ -26,10 +26,7 @@ let questions: Question[] = [...ALL_QUESTIONS];
 
 // Simulate the list of valid accounts from the Google Sheet
 const VALID_ACCOUNTS = [
-    'student@google.com',
-    'shad03152015@gmail.com',
-    'admin@barexam.com',
-    'reviewer@lawschool.edu',
+    'shad03152015@gmail.com'
 ];
 
 // Initialize default users when the service loads

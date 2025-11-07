@@ -71,6 +71,22 @@ The application uses the `authorized_users` collection with the following struct
   created_at: Date,                 // Creation timestamp
   updated_at: Date                  // Last update timestamp
 }
+
+{
+  "_id": {
+    "$oid": "690dc22b97622b71143efda5"
+  },
+  "email": "shad03152015@gmail.com",        
+  "name": "Shad Shad",                
+  "google_id": "google-123456",       
+  "is_active": true,                  
+  "created_at": {
+    "$date": "2025-11-06T13:29:25.784Z"
+  }, 
+  "updated_at": {
+    "$date": "2025-11-06T13:29:25.784Z"
+  }, 
+}
 ```
 
 ### 5. Database Indexes

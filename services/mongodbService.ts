@@ -81,33 +81,9 @@ export const initializeDefaultUsers = async (): Promise<void> => {
     if (userCount === 0) {
       const defaultUsers: Omit<AuthorizedUser, '_id'>[] = [
         {
-          email: 'student@google.com',
-          name: 'Student User',
-          google_id: 'default_student_001',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
           email: 'shad03152015@gmail.com',
           name: 'Shad User',
           google_id: 'default_shad_001',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          email: 'admin@barexam.com',
-          name: 'Admin User',
-          google_id: 'default_admin_001',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          email: 'reviewer@lawschool.edu',
-          name: 'Reviewer User',
-          google_id: 'default_reviewer_001',
           is_active: true,
           created_at: new Date(),
           updated_at: new Date()
