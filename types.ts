@@ -1,9 +1,9 @@
-
 export interface Question {
   subject: string;
   No: number;
   Question: string;
   Answer: string;
+  Options?: string[];
 }
 
 export interface UserAnswers {

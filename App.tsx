@@ -12,14 +12,28 @@ import LoginView from './components/LoginView';
 import UserMenu from './components/UserMenu';
 import QuestionBankView from './components/QuestionBankView';
 
-const SUBJECT_STORAGE_KEY = 'examBar2026LastSelectedSubject';
-const THEME_STORAGE_KEY = 'examBar2026ThemeColor';
-const BACKGROUND_STORAGE_KEY = 'examBar2026BackgroundColor';
-const AUTH_STORAGE_KEY = 'examBar2026Authenticated';
-const USER_INFO_STORAGE_KEY = 'examBar2026UserInfo';
+const SUBJECT_STORAGE_KEY = 'examPractice2026LastSelectedSubject';
+const THEME_STORAGE_KEY = 'examPractice2026ThemeColor';
+const BACKGROUND_STORAGE_KEY = 'examPractice2026BackgroundColor';
+const AUTH_STORAGE_KEY = 'examPractice2026Authenticated';
+const USER_INFO_STORAGE_KEY = 'examPractice2026UserInfo';
 
 const DEFAULT_THEME_COLOR = '#4f46e5'; // Default Indigo
 const DEFAULT_BACKGROUND = 'gradient';
+
+/**
+ * Shuffles an array in place using the Fisher-Yates (aka Knuth) Shuffle algorithm.
+ * @param array The array to shuffle.
+ * @returns The shuffled array.
+ */
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
 
 const App: React.FC = () => {
   const [examStatus, setExamStatus] = useState<ExamStatus>(ExamStatus.Idle);
@@ -122,8 +136,10 @@ const App: React.FC = () => {
     try {
       const allSubjectQuestions = await getQuestionsForSubject(selectedSubject);
       
+      const shuffledQuestions = shuffleArray(allSubjectQuestions);
+
       const desiredCount = 20;
-      const questionSubset = allSubjectQuestions.slice(0, Math.min(desiredCount, allSubjectQuestions.length));
+      const questionSubset = shuffledQuestions.slice(0, Math.min(desiredCount, shuffledQuestions.length));
 
       setActiveQuestions(questionSubset);
       setUserAnswers({});
@@ -191,7 +207,7 @@ const App: React.FC = () => {
     return (
       <div className="glass-panel text-center p-6 md:p-12 rounded-3xl shadow-2xl shadow-black/30 animate-fade-in w-full max-w-2xl">
         <BookOpenIcon className="w-16 h-16 mx-auto text-brand-primary text-glow" />
-        <h1 className="text-4xl md:text-5xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Bar 2026</h1>
+        <h1 className="text-4xl md:text-5xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Practice for 2026 Bar Examination</h1>
         <p className="text-slate-400 mb-8 max-w-2xl mx-auto">
           Select your subject to begin.
         </p>
@@ -259,7 +275,7 @@ const App: React.FC = () => {
       <header className="glass-panel glass-panel-header w-full border-b p-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <SparklesIcon className="w-8 h-8 text-brand-primary text-glow animate-subtle-glow" />
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Exam Bar 2026</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Exam Practice for 2026 Bar Examination</h1>
         </div>
         <div className="flex items-center gap-2">
           <BackgroundPicker currentBackground={background} onChangeBackground={setBackground} />

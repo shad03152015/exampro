@@ -139,9 +139,9 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
           </div>
         </header>
         <main className="flex-grow flex flex-col min-h-0 mt-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-slate-100 flex-shrink-0">General Essay</h2>
+          <h2 className="text-lg font-bold mb-2 text-slate-100 flex-shrink-0">General Essay</h2>
           <p className="text-slate-400 mb-4">There are no specific questions for this session. Please write your response in the text area below.</p>
-          <div className="relative w-full flex-grow">
+          <div className="relative w-full h-[279px]">
             <textarea
               value={userAnswers[0] || ''}
               onChange={handleFreeformAnswerChange}
@@ -235,6 +235,10 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
       recognitionRef.current.start();
       setIsListening(true);
     }
+  };
+  
+  const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserAnswers(prev => ({ ...prev, [currentQuestion.No]: e.target.value }));
   };
 
   const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -363,28 +367,57 @@ const ExamView: React.FC<ExamViewProps> = ({ questions, onFinish }) => {
       </header>
       
       <main className="flex-grow flex flex-col min-h-0">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 text-slate-100 flex-shrink-0">{currentQuestion.Question}</h2>
-        <div className="relative w-full flex-grow">
-          <textarea
-            value={userAnswers[currentQuestion.No] || ''}
-            onChange={handleAnswerChange}
-            placeholder="Compose your answer or use the microphone..."
-            className="w-full h-full p-4 pr-16 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500"
-          />
-          {isSpeechSupported && (
-            <button
-              onClick={handleToggleListening}
-              className={`absolute top-4 right-4 p-3 rounded-full transition-all duration-300 backdrop-blur-sm
-                ${isListening
-                  ? 'bg-red-500/50 text-red-200 ring-2 ring-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
-                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+        <h2 className="text-lg font-bold mb-4 text-slate-100 flex-shrink-0">{currentQuestion.Question}</h2>
+        
+        {currentQuestion.Options && currentQuestion.Options.length > 0 ? (
+          <div className="space-y-3 h-[279px] overflow-y-auto pr-2">
+            {currentQuestion.Options.map((option, index) => (
+              <label
+                key={index}
+                className={`flex items-start p-4 border rounded-lg transition cursor-pointer ${
+                  userAnswers[currentQuestion.No] === option
+                    ? 'bg-brand-primary/20 border-brand-primary'
+                    : 'border-slate-600/80 bg-slate-800/50 hover:bg-slate-700/50'
                 }`}
-              aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
-            >
-              <MicrophoneIcon className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+              >
+                <input
+                  type="radio"
+                  name={`question-${currentQuestion.No}`}
+                  value={option}
+                  checked={userAnswers[currentQuestion.No] === option}
+                  onChange={handleOptionChange}
+                  className="w-5 h-5 mt-1 text-brand-primary bg-slate-700 border-slate-500 focus:ring-brand-primary focus:ring-2 flex-shrink-0"
+                />
+                <span className="ml-4 text-slate-200 text-lg">
+                  {String.fromCharCode(97 + index)}. {option}
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="relative w-full h-[279px]">
+            <textarea
+              value={userAnswers[currentQuestion.No] || ''}
+              onChange={handleAnswerChange}
+              placeholder="Compose your answer or use the microphone..."
+              className="w-full h-full p-4 pr-16 border border-slate-600/80 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition bg-slate-800/50 text-lg text-slate-200 placeholder-slate-500"
+            />
+            {isSpeechSupported && (
+              <button
+                onClick={handleToggleListening}
+                className={`absolute top-4 right-4 p-3 rounded-full transition-all duration-300 backdrop-blur-sm
+                  ${isListening
+                    ? 'bg-red-500/50 text-red-200 ring-2 ring-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)] animate-pulse'
+                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  }`}
+                aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+              >
+                <MicrophoneIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        )}
+
          <div className="mt-4 border-t border-slate-700/80 pt-4 flex-shrink-0">
             <div className="flex items-center">
               <button

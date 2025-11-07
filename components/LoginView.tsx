@@ -44,7 +44,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   return (
     <div className="glass-panel text-center p-6 md:p-12 rounded-3xl shadow-2xl shadow-black/30 animate-fade-in w-full max-w-md">
       <BookOpenIcon className="w-16 h-16 mx-auto text-brand-primary text-glow" />
-      <h1 className="text-4xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Bar 2026</h1>
+      <h1 className="text-4xl font-black mt-4 mb-2 text-glow tracking-tight">Exam Practice for 2026 Bar Examination</h1>
       <p className="text-slate-400 mb-8">
         Sign in with your Google account to continue.
       </p>
