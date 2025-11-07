@@ -1,7 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpenIcon } from './IconComponents';
 import Spinner from './Spinner';
 import { validateEmail } from '../services/backendService';
+
+// Declare global types for Google OAuth
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        oauth2: {
+          initCodeClient: (config: any) => {
+            requestCode: () => void;
+          };
+        };
+      };
+    };
+  }
+}
 
 // Simple inline SVG for Google icon
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
