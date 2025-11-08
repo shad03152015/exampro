@@ -1,3 +1,4 @@
 {
-  "outputDirectory": "dist"
+  "buildCommand": "pnpm run build --workspace=exampro-frontend",
+  "outputDirectory": "packages/frontend/dist"
 }
