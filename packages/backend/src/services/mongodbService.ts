@@ -8,6 +8,9 @@ const DB_NAME = process.env.MONGODB_DB_NAME || 'exampro';
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
+// Connection promise to avoid multiple connection attempts
+let connectionPromise: Promise<Db> | null = null;
+
 // Authorized user interface
 export interface AuthorizedUser {
   _id?: string;
@@ -28,23 +31,33 @@ export const connectToDatabase = async (): Promise<Db> => {
     return db;
   }
 
-  try {
-    client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    db = client.db(DB_NAME);
-
-    // Create indexes for better performance
-    const usersCollection = db.collection('authorized_users');
-    await usersCollection.createIndex({ email: 1 }, { unique: true });
-    await usersCollection.createIndex({ google_id: 1 });
-    await usersCollection.createIndex({ is_active: 1 });
-
-    console.log('Connected to MongoDB successfully');
-    return db;
-  } catch (error) {
-    console.error('Failed to connect to MongoDB:', error);
-    throw new Error('Database connection failed');
+  // If connection is already in progress, wait for it
+  if (connectionPromise) {
+    return connectionPromise;
   }
+
+  connectionPromise = (async () => {
+    try {
+      client = new MongoClient(MONGODB_URI);
+      await client.connect();
+      db = client.db(DB_NAME);
+
+      // Create indexes for better performance
+      const usersCollection = db.collection('authorized_users');
+      await usersCollection.createIndex({ email: 1 }, { unique: true });
+      await usersCollection.createIndex({ google_id: 1 });
+      await usersCollection.createIndex({ is_active: 1 });
+
+      console.log('Connected to MongoDB successfully');
+      return db;
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      connectionPromise = null; // Reset on failure
+      throw new Error('Database connection failed');
+    }
+  })();
+
+  return connectionPromise;
 };
 
 /**
