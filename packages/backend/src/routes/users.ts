@@ -5,7 +5,7 @@ import {
   getAuthorizedUsers
 } from '../services/mongodbService.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 /**
  * Get all authorized users

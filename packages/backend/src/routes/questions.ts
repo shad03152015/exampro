@@ -11,7 +11,7 @@ import {
   POLITICAL_LAW_QUESTIONS
 } from '../data/index.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Store questions in memory (in production, this would be a database)
 let questions: Question[] = [

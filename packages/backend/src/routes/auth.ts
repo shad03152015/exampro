@@ -3,7 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { validateEmail, getUsersCollection } from '../services/mongodbService.js';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
