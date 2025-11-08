@@ -11,6 +11,15 @@ import usersRoutes from './routes/users.js';
 // Load environment variables
 dotenv.config();
 
+// Initialize database connection
+connectToDatabase()
+  .then(() => {
+    console.log('Database connected successfully');
+  })
+  .catch((error) => {
+    console.error('Failed to connect to database:', error);
+  });
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -54,21 +63,13 @@ app.use('*', (_req, res) => {
   });
 });
 
-// Start server
-const startServer = async () => {
-  try {
-    // Initialize database connection
-    await connectToDatabase();
-    console.log('Database connected successfully');
+// For Vercel serverless functions - export the app
+export default app;
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Health check available at http://localhost:${PORT}/api/health`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Health check available at http://localhost:${PORT}/api/health`);
+  });
+}

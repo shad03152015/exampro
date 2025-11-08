@@ -1,4 +1,16 @@
 {
-  "buildCommand": "pnpm run build --workspace=exampro-frontend",
-  "outputDirectory": "packages/frontend/dist"
+  "projects": [
+    {
+      "name": "exampro-frontend",
+      "path": "packages/frontend",
+      "buildCommand": "pnpm run build --workspace=exampro-frontend",
+      "outputDirectory": "dist"
+    },
+    {
+      "name": "exampro-backend",
+      "path": "packages/backend",
+      "buildCommand": "pnpm run build --workspace=exampro-backend",
+      "outputDirectory": "dist"
+    }
+  ]
 }
