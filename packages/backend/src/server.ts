@@ -11,14 +11,16 @@ import usersRoutes from './routes/users.js';
 // Load environment variables
 dotenv.config();
 
-// Initialize database connection
-connectToDatabase()
-  .then(() => {
-    console.log('Database connected successfully');
-  })
-  .catch((error) => {
-    console.error('Failed to connect to database:', error);
-  });
+// Initialize database connection (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  connectToDatabase()
+    .then(() => {
+      console.log('Database connected successfully');
+    })
+    .catch((error) => {
+      console.error('Failed to connect to database:', error);
+    });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
